@@ -15,6 +15,7 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.DisplayMetrics;
+import android.view.MotionEvent;
 
 
 public class WreckRollActivity extends Activity {
@@ -30,6 +31,8 @@ public class WreckRollActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
         
+        final ControllerBoard board = ((ControllerBoard)findViewById(R.id.panel));
+
 //        Rect rectgle= new Rect();
 //        Window window= getWindow();
 //        window.getDecorView().getWindowVisibleDisplayFrame(rectgle);
@@ -39,27 +42,6 @@ public class WreckRollActivity extends Activity {
 //        int TitleBarHeight= contentViewTop - StatusBarHeight;
 //
 
-        int titleBarHeight = 35;
-        final ControllerBoard board = ((ControllerBoard)findViewById(R.id.panel));
-        DisplayMetrics metrics = new DisplayMetrics();
-        this.getWindowManager().getDefaultDisplay().getMetrics(metrics);
-        int statusBarHeight = (int) Math.ceil(titleBarHeight * metrics.density);
-
-        int usableHeight = metrics.heightPixels - statusBarHeight;
-//        Bitmap   b = BitmapFactory.decodeByteArray(buf, id.start, id.length);
-        int dPadRadius = (int)(usableHeight * 0.8/2);
-        //NOTE: currently assumes landscape mode
-        Circle circle = new Circle(usableHeight / 2, usableHeight / 2, dPadRadius, Color.GRAY);
-        board.addTouchPoint(circle);
-        
-        circle.setOnTouchListener(new OnTouchPointListener() {
-
-            @Override
-            public void touchPerformed(TouchPoint point, float x, float y) {
-                processMovement((Circle) point, x, y);
-            }
-        });
-        
         board.setOnDrawListener(new OnDrawListener() {
 
             @Override
@@ -73,6 +55,78 @@ public class WreckRollActivity extends Activity {
                 //nothing to do
             }
         });
+        
+        //draw the buttons as touchpoint controls
+        int titleBarHeight = 50;
+        DisplayMetrics metrics = new DisplayMetrics();
+        this.getWindowManager().getDefaultDisplay().getMetrics(metrics);
+        int statusBarHeight = (int) Math.ceil(titleBarHeight * metrics.density);
+
+        int usableHeight = metrics.heightPixels - statusBarHeight;
+        int dPadRadius = (int)(usableHeight * 0.8/2);
+        //NOTE: currently assumes landscape mode
+        Circle circle = new Circle(usableHeight / 2, usableHeight / 2, dPadRadius, Color.LTGRAY);
+        board.addTouchPoint(circle);
+        
+        circle.setOnTouchListener(new OnTouchPointListener() {
+            @Override
+            public boolean isSupportedAction(int action) {
+                return action != MotionEvent.ACTION_UP;
+            }
+
+            @Override
+            public void touchPerformed(TouchPoint point, float x, float y) {
+                processMovement((Circle) point, x, y);
+            }
+        });
+        
+        int radius = usableHeight / 8;
+
+        Circle smokeButton = new Circle(metrics.widthPixels - 200, 1 * usableHeight / 2 - radius / 2, radius, Color.RED);
+        board.addTouchPoint(smokeButton);
+        smokeButton.setOnTouchListener(new OnTouchPointListener() {
+            @Override
+            public boolean isSupportedAction(int action) {
+                return action == MotionEvent.ACTION_DOWN;
+            }
+
+            @Override
+            public void touchPerformed(TouchPoint point, float x, float y) {
+                client.toggleSmoke();
+            }
+        });
+        
+        Circle gunButton       = new Circle(metrics.widthPixels - 75, 1 * usableHeight / 4, radius, Color.RED);
+        board.addTouchPoint(gunButton);
+        gunButton.setOnTouchListener(new OnTouchPointListener() {
+            @Override
+            public boolean isSupportedAction(int action) {
+                return action == MotionEvent.ACTION_DOWN;
+            }
+            
+            @Override
+            public void touchPerformed(TouchPoint point, float x, float y) {
+                client.toggleGun();
+            }
+        });
+
+        Circle canopyButton    = new Circle(metrics.widthPixels - 200, 3 * usableHeight / 4, radius, Color.RED);
+        board.addTouchPoint(canopyButton);
+        canopyButton.setOnTouchListener(new OnTouchPointListener() {
+            
+            @Override
+            public boolean isSupportedAction(int action) {
+                return action == MotionEvent.ACTION_DOWN;
+            }
+
+            @Override
+            public void touchPerformed(TouchPoint point, float x, float y) {
+                client.toggleCanopy();
+            }
+        });
+        Circle startStopButton = new Circle(metrics.widthPixels - 75, 1 * usableHeight / 2 + radius / 2, radius, Color.RED);
+        board.addTouchPoint(startStopButton);
+
     }
     
     protected void processMovement(Circle point, float touchX, float touchY) {

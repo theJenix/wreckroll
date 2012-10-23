@@ -59,7 +59,7 @@ public class ControllerBoard extends SurfaceView implements SurfaceHolder.Callba
         Collections.reverse(reversedTouchPoints);
         for (TouchPoint tp : reversedTouchPoints) {
             
-            if (tp.isTouchPerformed(event.getX(), event.getY())) {
+            if (tp.isTouchPerformed(event.getActionMasked(), event.getX(), event.getY())) {
                 tp.fireTouchPerformed(event.getX(), event.getY());  
             }
         }
