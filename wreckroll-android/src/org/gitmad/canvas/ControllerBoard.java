@@ -4,11 +4,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.graphics.Rect;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
@@ -90,14 +90,18 @@ public class ControllerBoard extends SurfaceView implements SurfaceHolder.Callba
 
     @Override
     public void onDraw(Canvas canvas) {
+        this.onDrawListener.onPreDraw();
         if (this.backgroundImage != null) {
             Paint paint = new Paint();
-            canvas.drawBitmap(this.backgroundImage, 0, 0, paint);
+            Rect rect = new Rect();
+            this.getDrawingRect(rect);
+            canvas.drawBitmap(this.backgroundImage, null, rect, paint);
         }
         
         for (TouchPoint tp : this.touchPoints) {
             tp.draw(canvas);
         }
+        this.onDrawListener.onPostDraw();
     }
 
     public Bitmap getBackgroundImage() {

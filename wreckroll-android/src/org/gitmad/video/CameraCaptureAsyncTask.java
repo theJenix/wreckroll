@@ -35,6 +35,7 @@ public class CameraCaptureAsyncTask extends AsyncTask {
 
     Profiler resetProf = new Profiler("resetAfterExtracting", 10);
     private Bitmap currentBitmap;
+    private Bitmap backupBitmap;
     
     private class ImageDescriptor {
         public ImageDescriptor(int start, int length) {
@@ -53,7 +54,7 @@ public class CameraCaptureAsyncTask extends AsyncTask {
         try {
             
             byte[] totalBuf = new byte[1024000];
-            byte[] sideBuf  = new byte[64000];
+            byte[] sideBuf  = new byte[640000];
 
             url = new URL("http://192.168.0.20/video.cgi");
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
@@ -101,10 +102,27 @@ public class CameraCaptureAsyncTask extends AsyncTask {
     private void updateBitmap(byte[] buf, ImageDescriptor id) {
         //TODO: may have to double buffer the bitmaps
         BitmapFactory.Options opts = new BitmapFactory.Options();
-        opts.inBitmap = this.currentBitmap;
-        Bitmap   b = BitmapFactory.decodeByteArray(buf, id.start, id.length, opts);
-        this.currentBitmap = b.createScaledBitmap(b, this.displayMetrics.widthPixels, this.displayMetrics.heightPixels, false);
-        b.recycle();
+        opts.inSampleSize = 2;
+//        opts.inBitmap = this.currentBitmap;
+        Bitmap old = this.currentBitmap;
+        this.currentBitmap = BitmapFactory.decodeByteArray(buf, id.start, id.length, opts);
+        
+        if (old != null) {
+            old.recycle();
+        }
+//        this.currentBitmap = b.createScaledBitmap(b, this.displayMetrics.widthPixels, this.displayMetrics.heightPixels, false);
+//        b.recycle();
+//        if (opts.inBitmap != this.currentBitmap && opts.inBitmap != null) {
+//            opts.inBitmap.recycle();
+//        }
+        
+    }
+    
+    private Bitmap swapBitmaps() {
+        Bitmap tmp = this.currentBitmap;
+        this.currentBitmap = this.backupBitmap;
+        this.backupBitmap  = tmp;
+        return this.currentBitmap;
     }
 
     //NOTE: BEWARE: thar be dragons ahead (hackathon quality code, watch your step)
