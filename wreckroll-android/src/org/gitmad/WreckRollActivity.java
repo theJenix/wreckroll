@@ -5,23 +5,24 @@ import org.gitmad.canvas.ControllerBoard;
 import org.gitmad.canvas.OnDrawListener;
 import org.gitmad.canvas.OnTouchPointListener;
 import org.gitmad.canvas.TouchPoint;
+import org.gitmad.client.DebugClient;
+import org.gitmad.client.WreckClient;
+import org.gitmad.video.CameraCaptureAsyncTask;
 
 import android.app.Activity;
 import android.graphics.Bitmap;
 import android.graphics.Color;
-import android.graphics.Rect;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.DisplayMetrics;
-import android.view.Window;
 
-import com.gitmad.video.CameraCaptureAsyncTask;
 
 public class WreckRollActivity extends Activity {
     
     static final String IMAGE_FILENAME = "background.jpg";
     
     private CameraCaptureAsyncTask cameraCaptureTask;
+    private WreckClient client;
     
     /** Called when the activity is first created. */
     @Override
@@ -71,7 +72,6 @@ public class WreckRollActivity extends Activity {
             public void onPostDraw() {
                 //nothing to do
             }
-            
         });
     }
     
@@ -83,30 +83,25 @@ public class WreckRollActivity extends Activity {
         
         int stopBarPX = 30;
         if (Math.abs(touchY - point.getY()) > stopBarPX) {
-            moving  = true;
-            forward = touchY < point.getY();
+            if (touchY < point.getY()) {
+                this.client.forward();
+            } else {
+                this.client.reverse();
+            }
         } else {
-            moving = false;
+            this.client.stop();
         }
         
         if (Math.abs(touchX - point.getX()) > stopBarPX) {
             turning = true;
-            right   = (touchX > point.getX());
-        } else {
-            turning = false;
-        }
-        
-        if (moving) {
-            System.out.println("MOVING " + (forward ? "FORWARD" : "BACKWARD"));
-        } else {
-            System.out.println("STOPPING");
-        }
-        
-        if (turning) {
-            System.out.println("TURNING " + (right ? "RIGHT" : "LEFT"));
+            if (touchX > point.getX()) {
+                this.client.right();
+            } else {
+                this.client.left();
+            }
         } else {
             System.out.println("NOT TURNING");
-        }
+        }        
     }
 
     @Override
@@ -115,6 +110,8 @@ public class WreckRollActivity extends Activity {
         
         this.cameraCaptureTask = new CameraCaptureAsyncTask(this, new Handler());
         this.cameraCaptureTask.execute();
+        
+        this.client = new DebugClient();
     }
     
     @Override
