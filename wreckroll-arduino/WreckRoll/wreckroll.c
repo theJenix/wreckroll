@@ -46,12 +46,27 @@
 #include "socketapp.h"
 #include "uip.h"
 #include <string.h>
+#include "wreckroll.h"
+
+extern unsigned short port;
+
+handler_callback handler;
 
 /*
  * Declaration of the protosocket function that handles the connection
  * (defined at the end of the code).
  */
-static int handle_connection(struct socket_app_state *s);
+int handle_connection(struct socket_app_state *s);
+
+/*---------------------------------------------------------------------------*/
+void set_command_handler(handler_callback h) {
+ handler = h;
+}
+
+void test() {
+}
+/*---------------------------------------------------------------------------*/
+
 /*---------------------------------------------------------------------------*/
 /*
  * The initialization function. We must explicitly call this function
@@ -102,15 +117,15 @@ void socket_app_appcall(void)
  * explicitly return - all return statements are hidden in the PSOCK
  * macros.
  */
-static int handle_connection(struct socket_app_state *s)
+int handle_connection(struct socket_app_state *s)
 {
   PSOCK_BEGIN(&s->p);
 
   PSOCK_READTO(&s->p, '\n');
-  handle_command(s->inputbuffer);
+  handler(s->inputbuffer);
   memset(s->inputbuffer, 0x00, sizeof(s->inputbuffer));
-  PSOCK_CLOSE(&s->p);
 
   PSOCK_END(&s->p);
 }
+
 /*---------------------------------------------------------------------------*/
