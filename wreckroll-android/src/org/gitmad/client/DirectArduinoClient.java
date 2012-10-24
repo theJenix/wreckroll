@@ -1,53 +1,59 @@
 package org.gitmad.client;
 
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.net.Socket;
+import java.net.UnknownHostException;
+
 public class DirectArduinoClient implements WreckClient {
+
+    private Socket socket;
+    private PrintWriter out;
+
+    public DirectArduinoClient() throws UnknownHostException, IOException {
+        this.socket = new Socket("192.168.1.2", 9000);
+        this.out = new PrintWriter(socket.getOutputStream(), 
+                true);   
+    }
 
     @Override
     public void forward() {
-        // TODO Auto-generated method stub
-        
+        this.out.println("F");
     }
 
     @Override
     public void stop() {
-        // TODO Auto-generated method stub
-        
+        this.out.println("S");
     }
 
     @Override
     public void reverse() {
-        // TODO Auto-generated method stub
-        
+        this.out.println("V");
     }
 
     @Override
     public void left() {
-        // TODO Auto-generated method stub
-        
+        this.out.println("L");
     }
 
     @Override
     public void right() {
-        // TODO Auto-generated method stub
-        
+        this.out.println("R");
     }
 
     @Override
     public void toggleGun() {
-        // TODO Auto-generated method stub
-        
+        this.out.println("G");
     }
 
     @Override
     public void toggleSmoke() {
-        // TODO Auto-generated method stub
-        
+        this.out.println("M");
     }
 
     @Override
     public void toggleCanopy() {
-        // TODO Auto-generated method stub
-        
+        this.out.println("E");
     }
 
 }

@@ -1,11 +1,14 @@
 package org.gitmad;
 
+import java.io.IOException;
+import java.net.UnknownHostException;
+
 import org.gitmad.canvas.Circle;
 import org.gitmad.canvas.ControllerBoard;
 import org.gitmad.canvas.OnDrawListener;
 import org.gitmad.canvas.OnTouchPointListener;
 import org.gitmad.canvas.TouchPoint;
-import org.gitmad.client.DebugClient;
+import org.gitmad.client.DirectArduinoClient;
 import org.gitmad.client.WreckClient;
 import org.gitmad.video.CameraCaptureAsyncTask;
 
@@ -165,7 +168,12 @@ public class WreckRollActivity extends Activity {
         this.cameraCaptureTask = new CameraCaptureAsyncTask(this, new Handler());
         this.cameraCaptureTask.execute();
         
-        this.client = new DebugClient();
+        try {
+            this.client = new DirectArduinoClient();
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException(e);
+        }
     }
     
     @Override
