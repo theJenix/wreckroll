@@ -146,7 +146,7 @@ void handle_command(char *inputbuffer)
 }
 
 void update_state(char command) {
-  switch(command) {
+  switch(command & ~0x20) { //always uppercase
     case 'F': //forward
       if (ws.movement == 'R') {
         //TODO: status message back to caller
