@@ -29,14 +29,34 @@ import android.view.MotionEvent;
 
 public class WreckRollActivity extends Activity {
     
+    private class CountdownTimer {
+        private int countDownMS;
+        private long lastPollMS;
+
+        public CountdownTimer() {
+        }
+        
+        public void start(int countDownMS) {
+            this.countDownMS = countDownMS;
+            this.lastPollMS = System.currentTimeMillis();
+        }
+        
+        public boolean poll() {
+            if (this.countDownMS != 0) {
+                long curPollMS   = System.currentTimeMillis();
+                this.countDownMS = (int) Math.max(0, this.countDownMS - (curPollMS - this.lastPollMS));
+                this.lastPollMS  = curPollMS;
+            }
+            return countDownMS != 0;
+        }
+    }
     static final String IMAGE_FILENAME = "background.jpg";
 
-    private static final int FREEZE_FRAME_COUNT = 60;
-    
     private CameraCaptureAsyncTask cameraCaptureTask;
     private WreckClient client;
 
-    private int freezeFrames = 0;
+    private static final int FREEZE_FRAME_TIME_MS = 1000;
+    private CountdownTimer freezeFrameTimer = new CountdownTimer();
     
     /** Called when the activity is first created. */
     @Override
@@ -59,11 +79,9 @@ public class WreckRollActivity extends Activity {
 
             @Override
             public void onPreDraw() {
-                if (WreckRollActivity.this.freezeFrames == 0) {
+                if (!WreckRollActivity.this.freezeFrameTimer.poll()) {
                     //set the latest bitmap captured from the camera
                     board.setBackgroundImage(cameraCaptureTask.getCurrentBitmap());
-                } else {
-                    WreckRollActivity.this.freezeFrames--;
                 }
             }
 
@@ -159,7 +177,7 @@ public class WreckRollActivity extends Activity {
             @Override
             public void touchPerformed(TouchPoint point, float x, float y) {
                 saveImage(board.getBackgroundImage());
-                WreckRollActivity.this.freezeFrames  = FREEZE_FRAME_COUNT;
+                WreckRollActivity.this.freezeFrameTimer.start(FREEZE_FRAME_TIME_MS);
             }
         });
         
