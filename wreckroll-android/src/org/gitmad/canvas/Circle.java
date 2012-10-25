@@ -4,23 +4,10 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 
-public class Circle implements TouchPoint {
-    private class NoOpTouchPointListener implements OnTouchPointListener {
-
-        @Override
-        public boolean isSupportedAction(int action) {
-            return false;
-        }
-
-        @Override
-        public void touchPerformed(TouchPoint point, float x, float y) {
-            //NO-OP
-        }
-    }
+public class Circle extends ATouchPoint {
     private float x, y;
     private float radius;
     private int color = Color.BLACK;
-    private OnTouchPointListener listener = new NoOpTouchPointListener();
 
     public Circle(float x, float y, float radius, int color) {
         this.x = x;
@@ -85,21 +72,12 @@ public class Circle implements TouchPoint {
     
     @Override
     public boolean isTouchPerformed(int action, float x, float y) {
-        if (!this.listener.isSupportedAction(action)) {
+        if (!this.getListener().isSupportedAction(action)) {
             return false;
         }
         //compute the distance between the center of the circle and the point
         float dist = (float) Math.sqrt(Math.pow(this.x - x, 2) + Math.pow(this.y - y, 2));
         //if the distance is less than the circle's radius, then the point is inside the circle
         return dist <= this.radius;
-    }
-
-    @Override
-    public void fireTouchPerformed(float x, float y) {
-        this.listener.touchPerformed(this, x, y);
-    }
-    
-    public void setOnTouchListener(OnTouchPointListener listener) {
-        this.listener = listener;
     }
 }

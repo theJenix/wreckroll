@@ -1,22 +1,28 @@
 package org.gitmad;
 
-import java.io.IOException;
-import java.net.UnknownHostException;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.util.Date;
 
 import org.gitmad.canvas.Circle;
 import org.gitmad.canvas.ControllerBoard;
+import org.gitmad.canvas.Image;
 import org.gitmad.canvas.OnDrawListener;
 import org.gitmad.canvas.OnTouchPointListener;
 import org.gitmad.canvas.TouchPoint;
-import org.gitmad.client.DirectArduinoClient;
+import org.gitmad.client.DebugClient;
 import org.gitmad.client.WreckClient;
 import org.gitmad.video.CameraCaptureAsyncTask;
 
 import android.app.Activity;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
+import android.provider.MediaStore;
 import android.util.DisplayMetrics;
 import android.view.MotionEvent;
 
@@ -24,9 +30,13 @@ import android.view.MotionEvent;
 public class WreckRollActivity extends Activity {
     
     static final String IMAGE_FILENAME = "background.jpg";
+
+    private static final int FREEZE_FRAME_COUNT = 60;
     
     private CameraCaptureAsyncTask cameraCaptureTask;
     private WreckClient client;
+
+    private int freezeFrames = 0;
     
     /** Called when the activity is first created. */
     @Override
@@ -49,8 +59,12 @@ public class WreckRollActivity extends Activity {
 
             @Override
             public void onPreDraw() {
-                //set the latest bitmap captured from the camera
-                board.setBackgroundImage(cameraCaptureTask.getCurrentBitmap());
+                if (WreckRollActivity.this.freezeFrames == 0) {
+                    //set the latest bitmap captured from the camera
+                    board.setBackgroundImage(cameraCaptureTask.getCurrentBitmap());
+                } else {
+                    WreckRollActivity.this.freezeFrames--;
+                }
             }
 
             @Override
@@ -65,10 +79,11 @@ public class WreckRollActivity extends Activity {
         this.getWindowManager().getDefaultDisplay().getMetrics(metrics);
         int statusBarHeight = (int) Math.ceil(titleBarHeight * metrics.density);
 
+        int usableWidth  = metrics.widthPixels;
         int usableHeight = metrics.heightPixels - statusBarHeight;
-        int dPadRadius = (int)(usableHeight * 0.8/2);
+        int dPadRadius = (int)(usableHeight * 0.6/2);
         //NOTE: currently assumes landscape mode
-        Circle circle = new Circle(usableHeight / 2, usableHeight / 2, dPadRadius, Color.LTGRAY);
+        Circle circle = new Circle((int)(dPadRadius * 1.3), usableHeight / 2, dPadRadius, Color.LTGRAY);
         board.addTouchPoint(circle);
         
         circle.setOnTouchListener(new OnTouchPointListener() {
@@ -130,8 +145,46 @@ public class WreckRollActivity extends Activity {
         Circle startStopButton = new Circle(metrics.widthPixels - 75, 1 * usableHeight / 2 + radius / 2, radius, Color.RED);
         board.addTouchPoint(startStopButton);
 
+        Bitmap bitmap = BitmapFactory.decodeResource(this.getResources(), R.drawable.camera);
+        bitmap = Bitmap.createScaledBitmap(bitmap, bitmap.getWidth()/2, bitmap.getHeight()/2, false);
+        Image snapShotButton = new Image(bitmap, usableWidth / 2, 100);
+        board.addTouchPoint(snapShotButton);
+        snapShotButton.setOnTouchListener(new OnTouchPointListener() {
+
+            @Override
+            public boolean isSupportedAction(int action) {
+                return action == MotionEvent.ACTION_DOWN;
+            }
+
+            @Override
+            public void touchPerformed(TouchPoint point, float x, float y) {
+                saveImage(board.getBackgroundImage());
+                WreckRollActivity.this.freezeFrames  = FREEZE_FRAME_COUNT;
+            }
+        });
+        
     }
     
+    protected void saveImage(Bitmap backgroundImage) {
+        File imagesFolder = new File(Environment.getExternalStorageDirectory(), "WreckRoll");
+        imagesFolder.mkdirs(); 
+        String fileName = "image_" + new Date().getTime() + ".jpg";
+        File output = new File(imagesFolder, fileName);
+//        while (output.exists()){
+//            fileName = "image_" + String.valueOf(imageNum) + ".jpg";
+//            output = new File(imagesFolder, fileName);
+//        }
+//        Uri uriSavedImage = Uri.fromFile(output);
+//        imageIntent.putExtra(MediaStore.EXTRA_OUTPUT, uriSavedImage);
+        try {
+            FileOutputStream out = new FileOutputStream(output);
+            backgroundImage.compress(Bitmap.CompressFormat.JPEG, 90, out);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        
+    }
+
     protected void processMovement(Circle point, float touchX, float touchY) {
         boolean moving = false;
         boolean forward = false;
@@ -169,7 +222,7 @@ public class WreckRollActivity extends Activity {
         this.cameraCaptureTask.execute();
         
         try {
-            this.client = new DirectArduinoClient();
+            this.client = new DebugClient(); // DirectArduinoClient();
         } catch (Exception e) {
             e.printStackTrace();
             throw new RuntimeException(e);
