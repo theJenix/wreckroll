@@ -5,12 +5,12 @@ var http = require('http'),
 var ips = {};
 
 var setRegIp = function(req, res){
-  console.log(req.connection.remoteAddress);
+  console.log('received POST from:', req.connection.remoteAddress);
   var lurl = url.parse(req.url),
       key = lurl.pathname,
       val = req.connection.remoteAddress;
   req.on('data', function(chunk){
-    console.log(chunk.toString());
+    console.log('  received POST data:', chunk.toString());
     var data = qs.parse(chunk.toString());
     if (data.ip !== null){
       val = data.ip;
@@ -19,18 +19,21 @@ var setRegIp = function(req, res){
   req.on("end", function(){
     ips[key] = val;
     res.writeHead(200);
-    console.log(val);
+    console.log("  set", key, "as", val);
     res.end(val);
   });
 };
 
 var getRegIp = function(req, res){
     lurl = url.parse(req.url);
+    console.log("received request for:", lurl.pathname);
     if (ips[lurl.pathname]){
+      console.log("  returning value:", ips[lurl.pathname]);
       res.writeHead(200);
       res.end(ips[lurl.pathname]);
       return;
     }
+    console.log("  request path not in memory");
     res.writeHead(404);
     res.end('path not found');
 };
@@ -43,3 +46,4 @@ http.createServer(function(req, res){
   }
   getRegIp(req, res);
 }).listen(8001);
+console.log("registrar server started");

@@ -2,6 +2,9 @@ package org.gitmad.wreckroll;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.Date;
 
 import org.gitmad.wreckroll.canvas.Circle;
@@ -11,7 +14,6 @@ import org.gitmad.wreckroll.canvas.OnDrawListener;
 import org.gitmad.wreckroll.canvas.OnTouchPointListener;
 import org.gitmad.wreckroll.canvas.TouchPoint;
 import org.gitmad.wreckroll.canvas.TypewriterTextWriter;
-import org.gitmad.wreckroll.client.DebugClient;
 import org.gitmad.wreckroll.client.WreckClient;
 import org.gitmad.wreckroll.util.CountdownTimer;
 import org.gitmad.wreckroll.video.CameraCaptureAsyncTask;
@@ -36,6 +38,8 @@ public class WreckRollActivity extends Activity {
     private WreckClient client;
 
     private static final int FREEZE_FRAME_TIME_MS = 1000;
+    
+    private final String REGISTRAR_ADDRESS = "192.168.1.150";
 
     protected static final int MAX_DETECTED_FACES = 1;
 
@@ -297,12 +301,44 @@ public class WreckRollActivity extends Activity {
             System.out.println("NOT TURNING");
         }        
     }
+    
+    private String queryRegistrar(String path){
+    	HttpURLConnection connection = null;
+    	try {
+    		URL url = new URL("http://" + REGISTRAR_ADDRESS + ":8001" + path);
+    		connection = (HttpURLConnection)url.openConnection();
+    		connection.setDoOutput(false);
+    		connection.setRequestMethod("GET");
+    		connection.connect();
+    		if (connection.getResponseCode() == 404){
+    			return null;
+    		}
+    		return connection.getResponseMessage();
+    	} catch(IOException ex){
+    		return null;
+    	}
+    }
+    private String getRelayIP(){
+    	String queryResult = queryRegistrar("/relay");
+    	if (queryResult != null){
+    		return queryResult;
+    	}
+    	return "192.168.1.50";
+    }
+    
+    private String getCameraIP(){
+    	String queryResult = queryRegistrar("/camera");
+    	if (queryResult != null){
+    		return queryResult;
+    	}
+    	return "192.168.1.20";
+    }
 
     @Override
     protected void onResume() {
         super.onResume();
         
-        String ipCamera = "192.168.1.20";
+        String ipCamera = getCameraIP();
 //        int color = 224, 170, 15 or 183, 135, 39
         this.cameraCaptureTask = new CameraCaptureAsyncTask(this, ipCamera, new SpyHardProcessor(MAX_DETECTED_FACES, Color.YELLOW, 50));
         this.cameraCaptureTask.execute();
@@ -310,7 +346,7 @@ public class WreckRollActivity extends Activity {
         try {
             this.client = new DebugClient(); // DirectArduinoClient();
             ///TODO: connect to registrar
-            String ipRelay   = "192.168.1.134";
+            String ipRelay   = getRelayIP();
             short  relayPort = 6696;
 //            this.client = new RelayClient(ipRelay, relayPort);
         } catch (Exception e) {
