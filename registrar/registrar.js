@@ -36,7 +36,9 @@ var getRegIp = function(req, res){
 };
 
 http.createServer(function(req, res){
+  console.log('new connection');
   if (req.method.toLowerCase() === "post"){
+    console.log('its a post');
     return setRegIp(req, res);
   }
   getRegIp(req, res);
