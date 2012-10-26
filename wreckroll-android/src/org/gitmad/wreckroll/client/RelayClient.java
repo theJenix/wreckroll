@@ -10,21 +10,39 @@ public class RelayClient implements WreckClient {
 
     private HttpURLConnection connection;
     private OutputStream out;
+    private int retries;
+    private URL url;
 
     public RelayClient(String ipAddress, int port) throws IOException {
-        URL url = new URL("http://" + ipAddress + ":" + port);
-        this.connection = (HttpURLConnection)url.openConnection();
-        this.connection.setDoInput(true);
-        this.connection.setDoOutput(true);
-        this.out = this.connection.getOutputStream();
+        this.url = new URL("http://" + ipAddress + ":" + port);
+        this.retries = 0;
     }
 
-	private void sendCommand(String command) throws IOException{
-    	this.out.write(new String("{\"command\":\""+ command +"\"}").getBytes());
-    	this.out.flush();
+	private void sendCommand(String command) {
+	    HttpURLConnection connection = null;
+	    try {
+	        String message = new String("{\"command\":\""+ command +"\"}");
+	        connection = (HttpURLConnection)url.openConnection();
+	        connection.setDoOutput(true);
+	        connection.setRequestMethod("POST");
+	        connection.setRequestProperty("Content-Length", Integer.toString(message.length()));
+	        connection.getOutputStream().write(message.getBytes());
+	        connection.connect();
+	        connection.getResponseCode();
+        	this.retries = 0;
+	    } catch (IOException ex) {
+	        this.retries++;
+	        if (this.retries >= 5) {
+	            throw new RuntimeException(ex);
+	        }
+	    } finally {
+	        if (connection != null) {
+	            connection.disconnect();
+	        }
+	    }
     }
     
-    @Override
+    
     public void forward() {
         
 //        this.out.wr
@@ -32,44 +50,44 @@ public class RelayClient implements WreckClient {
     	sendCommand("forward");
     }
 
-    @Override
+    
     public void stop() {
         // TODO Auto-generated method stub
     	sendCommand("stop");
     }
 
-    @Override
+    
     public void reverse() {
         // TODO Auto-generated method stub
     	sendCommand("referse");
     }
 
-    @Override
+    
     public void left() {
         // TODO Auto-generated method stub
     	sendCommand("left");
         
     }
 
-    @Override
+    
     public void right() {
         // TODO Auto-generated method stub
     	sendCommand("right");
     }
 
-    @Override
+    
     public void toggleGun() {
         // TODO Auto-generated method stub
     	sendCommand("gun");
     }
 
-    @Override
+    
     public void toggleSmoke() {
         // TODO Auto-generated method stub
     	sendCommand("smoke");
     }
 
-    @Override
+    
     public void toggleCanopy() {
         // TODO Auto-generated method stub
     	sendCommand("canopy");

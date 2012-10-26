@@ -32,14 +32,16 @@ public class CameraCaptureAsyncTask extends AsyncTask {
     private Handler handler;
     private DisplayMetrics displayMetrics;
     private ImageProcessor[] imageProcessors;
+    private String ipAddr;
 
-    public CameraCaptureAsyncTask(WreckRollActivity wreckRollActivity, ImageProcessor ... imageProcessors) {
+    public CameraCaptureAsyncTask(WreckRollActivity wreckRollActivity, String ipAddr, ImageProcessor ... imageProcessors) {
         this.wreckRollActivity = wreckRollActivity;
+        this.ipAddr = ipAddr;
+        this.imageProcessors = imageProcessors;
+        
         this.handler = new Handler();
         this.displayMetrics = new DisplayMetrics();
         this.wreckRollActivity.getWindowManager().getDefaultDisplay().getMetrics(this.displayMetrics);
-
-        this.imageProcessors = imageProcessors;
     }
 
     Profiler resetProf = new Profiler("resetAfterExtracting", 10);
@@ -65,7 +67,7 @@ public class CameraCaptureAsyncTask extends AsyncTask {
             byte[] totalBuf = new byte[1024000];
             byte[] sideBuf  = new byte[640000];
 
-            url = new URL("http://192.168.1.20/video.cgi");
+            url = new URL("http://" + this.ipAddr + "/video.cgi");
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             byte[] buf = new byte[8192];
             InputStream is = connection.getInputStream();

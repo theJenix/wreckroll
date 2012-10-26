@@ -17,12 +17,10 @@ public class Image extends ATouchPoint {
         this.drawRect = new Rect(centerX - halfWidth, centerY - halfHeight, centerX + halfWidth, centerY + halfHeight);
     }
     
-    @Override
     public boolean isTouchPerformed(int action, float x, float y) {
         return this.drawRect.contains((int)x, (int)y);
     }
 
-    @Override
     public void draw(Canvas canvas) {
         Paint paint = new Paint();
         paint.setAlpha(50);

@@ -18,12 +18,10 @@ import android.view.View;
 public class ControllerBoard extends SurfaceView implements SurfaceHolder.Callback {
     private class NoOpDrawListener implements OnDrawListener {
 
-        @Override
         public void onPreDraw() {
             //NO-OP
         }
 
-        @Override
         public void onPostDraw() {
             //NO-OP
         }
@@ -47,7 +45,6 @@ public class ControllerBoard extends SurfaceView implements SurfaceHolder.Callba
         
         this.setOnTouchListener(new OnTouchListener() {
 
-            @Override
             public boolean onTouch(View view, MotionEvent event) {
                 return processTouch(view, event);
             }

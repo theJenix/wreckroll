@@ -16,42 +16,42 @@ public class DirectArduinoClient implements WreckClient {
                 true);   
     }
 
-    @Override
+    
     public void forward() {
         this.out.println("F");
     }
 
-    @Override
+    
     public void stop() {
         this.out.println("S");
     }
 
-    @Override
+    
     public void reverse() {
         this.out.println("V");
     }
 
-    @Override
+    
     public void left() {
         this.out.println("L");
     }
 
-    @Override
+    
     public void right() {
         this.out.println("R");
     }
 
-    @Override
+    
     public void toggleGun() {
         this.out.println("G");
     }
 
-    @Override
+    
     public void toggleSmoke() {
         this.out.println("M");
     }
 
-    @Override
+    
     public void toggleCanopy() {
         this.out.println("E");
     }

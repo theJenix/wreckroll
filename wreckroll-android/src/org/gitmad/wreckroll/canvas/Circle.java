@@ -62,7 +62,6 @@ public class Circle extends ATouchPoint {
         this.color = color;
     }
     
-    @Override
     public void draw(Canvas canvas) {
         Paint paint = new Paint();
         paint.setColor(this.color);
@@ -70,7 +69,6 @@ public class Circle extends ATouchPoint {
         canvas.drawCircle(this.x, this.y, this.radius, paint);
     }
     
-    @Override
     public boolean isTouchPerformed(int action, float x, float y) {
         if (!this.getListener().isSupportedAction(action)) {
             return false;

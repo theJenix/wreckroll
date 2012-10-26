@@ -11,6 +11,7 @@ import org.gitmad.wreckroll.canvas.OnDrawListener;
 import org.gitmad.wreckroll.canvas.OnTouchPointListener;
 import org.gitmad.wreckroll.canvas.TouchPoint;
 import org.gitmad.wreckroll.client.DebugClient;
+import org.gitmad.wreckroll.client.RelayClient;
 import org.gitmad.wreckroll.client.WreckClient;
 import org.gitmad.wreckroll.util.CountdownTimer;
 import org.gitmad.wreckroll.video.CameraCaptureAsyncTask;
@@ -57,7 +58,6 @@ public class WreckRollActivity extends Activity {
 
         board.setOnDrawListener(new OnDrawListener() {
 
-            @Override
             public void onPreDraw() {
                 if (!WreckRollActivity.this.freezeFrameTimer.poll()) {
                     Bitmap bmp = cameraCaptureTask.getCurrentBitmap();
@@ -66,7 +66,6 @@ public class WreckRollActivity extends Activity {
                 }
             }
 
-            @Override
             public void onPostDraw() {
                 //nothing to do
             }
@@ -86,12 +85,10 @@ public class WreckRollActivity extends Activity {
         board.addTouchPoint(circle);
         
         circle.setOnTouchListener(new OnTouchPointListener() {
-            @Override
             public boolean isSupportedAction(int action) {
                 return action != MotionEvent.ACTION_UP;
             }
 
-            @Override
             public void touchPerformed(TouchPoint point, float x, float y) {
                 processMovement((Circle) point, x, y);
             }
@@ -102,12 +99,10 @@ public class WreckRollActivity extends Activity {
         Circle smokeButton = new Circle(metrics.widthPixels - 200, 1 * usableHeight / 2 - radius / 2, radius, Color.RED);
         board.addTouchPoint(smokeButton);
         smokeButton.setOnTouchListener(new OnTouchPointListener() {
-            @Override
             public boolean isSupportedAction(int action) {
                 return action == MotionEvent.ACTION_DOWN;
             }
 
-            @Override
             public void touchPerformed(TouchPoint point, float x, float y) {
                 client.toggleSmoke();
             }
@@ -116,12 +111,10 @@ public class WreckRollActivity extends Activity {
         Circle gunButton       = new Circle(metrics.widthPixels - 75, 1 * usableHeight / 4, radius, Color.RED);
         board.addTouchPoint(gunButton);
         gunButton.setOnTouchListener(new OnTouchPointListener() {
-            @Override
             public boolean isSupportedAction(int action) {
                 return action == MotionEvent.ACTION_DOWN;
             }
             
-            @Override
             public void touchPerformed(TouchPoint point, float x, float y) {
                 client.toggleGun();
             }
@@ -131,12 +124,10 @@ public class WreckRollActivity extends Activity {
         board.addTouchPoint(canopyButton);
         canopyButton.setOnTouchListener(new OnTouchPointListener() {
             
-            @Override
             public boolean isSupportedAction(int action) {
                 return action == MotionEvent.ACTION_DOWN;
             }
 
-            @Override
             public void touchPerformed(TouchPoint point, float x, float y) {
                 client.toggleCanopy();
             }
@@ -150,12 +141,10 @@ public class WreckRollActivity extends Activity {
         board.addTouchPoint(snapShotButton);
         snapShotButton.setOnTouchListener(new OnTouchPointListener() {
 
-            @Override
             public boolean isSupportedAction(int action) {
                 return action == MotionEvent.ACTION_DOWN;
             }
 
-            @Override
             public void touchPerformed(TouchPoint point, float x, float y) {
                 saveImage(board.getBackgroundImage());
                 WreckRollActivity.this.freezeFrameTimer.start(FREEZE_FRAME_TIME_MS);
@@ -217,12 +206,17 @@ public class WreckRollActivity extends Activity {
     protected void onResume() {
         super.onResume();
         
+        String ipCamera = "192.168.1.20";
 //        int color = 224, 170, 15 or 183, 135, 39
-        this.cameraCaptureTask = new CameraCaptureAsyncTask(this, new Handler(), new SpyHardProcessor(MAX_DETECTED_FACES, Color.YELLOW, 50));
+        this.cameraCaptureTask = new CameraCaptureAsyncTask(this, ipCamera, new SpyHardProcessor(MAX_DETECTED_FACES, Color.YELLOW, 50));
         this.cameraCaptureTask.execute();
         
         try {
-            this.client = new DebugClient(); // DirectArduinoClient();
+//            this.client = new DebugClient(); // DirectArduinoClient();
+            ///TODO: connect to registrar
+            String ipRelay   = "192.168.1.134";
+            short  relayPort = 6696;
+            this.client = new RelayClient(ipRelay, relayPort);
         } catch (Exception e) {
             e.printStackTrace();
             throw new RuntimeException(e);

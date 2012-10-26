@@ -22,7 +22,6 @@ public class SpyHardProcessor implements ImageProcessor {
         this.paint.setAlpha(alpha);
     }
 
-    @Override
     public Bitmap process(Bitmap bitmap) {
         Bitmap bmp565 = bitmap.copy(Bitmap.Config.RGB_565, false);
         FaceDetector fd = new FaceDetector(bitmap.getWidth(), bitmap.getHeight(), this.maxFaces);
