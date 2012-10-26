@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Date;
 
@@ -214,6 +213,9 @@ public class WreckRollActivity extends Activity {
     		connection.setDoOutput(false);
     		connection.setRequestMethod("GET");
     		connection.connect();
+    		if (connection.getResponseCode() == 404){
+    			return null;
+    		}
     		return connection.getResponseMessage();
     	} catch(IOException ex){
     		return null;
