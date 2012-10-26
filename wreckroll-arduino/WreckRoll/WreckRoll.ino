@@ -16,7 +16,7 @@
 
 // WreckRoll configuration parameters ------------------------------------------
 
-unsigned char _ip[]    = {192,168,1,2};	// IP address of WiShield
+unsigned char registrar_ip[]    = {192,168,1,2};	// IP address of WiShield
 
 unsigned short port = 9000;
 

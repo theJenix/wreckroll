@@ -17,7 +17,6 @@ void post_to_registrar();
 void close_registrar();
 
 int get_post_count();
-void debug(char *msg);
 
 #ifdef __cplusplus
  }

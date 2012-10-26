@@ -2,8 +2,7 @@
 #ifndef _WRECKROLL_H
 #define _WRECKROLL_H
 
-typedef int (*socket_handler)();
-
+typedef int  (*socket_handler)();
 typedef void (*handler_callback)(char *);
 
 #define STATE_UNREGISTERED 0
@@ -22,8 +21,6 @@ void register_me();
 
 void set_command_handler(handler_callback handler);
 
-
-void debug(char *msg);
 #ifdef __cplusplus
  }
 #endif

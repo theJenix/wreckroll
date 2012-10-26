@@ -63,7 +63,6 @@ unsigned char check_if_registrar();
 
 socket_handler s_handler = check_if_registrar;
 
-
 /*---------------------------------------------------------------------------*/
 
 void add_socket_handler(socket_handler s) {

@@ -15,7 +15,6 @@ unsigned char connect_to_registrar() {
    post_count = 0;
    if (conn != NULL) {
      debug("Connected to registrar");
-     
      return 1;
    } else {
      return 0;
