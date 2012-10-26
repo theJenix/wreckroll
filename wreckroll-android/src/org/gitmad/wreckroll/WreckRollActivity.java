@@ -10,7 +10,7 @@ import org.gitmad.wreckroll.canvas.Image;
 import org.gitmad.wreckroll.canvas.OnDrawListener;
 import org.gitmad.wreckroll.canvas.OnTouchPointListener;
 import org.gitmad.wreckroll.canvas.TouchPoint;
-import org.gitmad.wreckroll.client.DebugClient;
+import org.gitmad.wreckroll.canvas.TypewriterTextWriter;
 import org.gitmad.wreckroll.client.RelayClient;
 import org.gitmad.wreckroll.client.WreckClient;
 import org.gitmad.wreckroll.util.CountdownTimer;
@@ -23,7 +23,6 @@ import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Environment;
-import android.os.Handler;
 import android.util.DisplayMetrics;
 import android.view.MotionEvent;
 
@@ -56,13 +55,30 @@ public class WreckRollActivity extends Activity {
 //        int TitleBarHeight= contentViewTop - StatusBarHeight;
 //
 
+        DisplayMetrics metrics = new DisplayMetrics();
+        this.getWindowManager().getDefaultDisplay().getMetrics(metrics);
+        int titleBarHeight = 50;
+        int statusBarHeight = (int) Math.ceil(titleBarHeight * metrics.density);
+
+        final int usableWidth  = metrics.widthPixels;
+        final int usableHeight = metrics.heightPixels - statusBarHeight;
+
         board.setOnDrawListener(new OnDrawListener() {
 
             public void onPreDraw() {
-                if (!WreckRollActivity.this.freezeFrameTimer.poll()) {
-                    Bitmap bmp = cameraCaptureTask.getCurrentBitmap();
-                    //set the latest bitmap captured from the camera
-                    board.setBackgroundImage(bmp);
+//                if (!WreckRollActivity.this.freezeFrameTimer.poll() || board.isWritingMessage()) {
+//                    CapturedImage image = cameraCaptureTask.getCurrentImage();
+//                    //set the latest bitmap captured from the camera
+//                    board.setBackgroundImage(image.getBitmap());
+//                    if (image.getAttribute(SpyHardProcessor.ATTR_FACE_FOUND).equals("true")) {
+//                        board.setMessage(generateRandomSpyMessage());
+//                    }
+//                }
+                if (!board.isWritingMessage()) {
+                    String newMessage = generateRandomSpyMessage();
+                    //TODO: this would make more sense if we could specify a max width...but for now, we're ok
+                    //NOTE: 108 is kind of arbitrary...we may need to adjust with different text
+                    board.setMessage(new TypewriterTextWriter(newMessage, usableWidth / 2 - 108, usableHeight - 100));
                 }
             }
 
@@ -72,13 +88,7 @@ public class WreckRollActivity extends Activity {
         });
         
         //draw the buttons as touchpoint controls
-        int titleBarHeight = 50;
-        DisplayMetrics metrics = new DisplayMetrics();
-        this.getWindowManager().getDefaultDisplay().getMetrics(metrics);
-        int statusBarHeight = (int) Math.ceil(titleBarHeight * metrics.density);
 
-        int usableWidth  = metrics.widthPixels;
-        int usableHeight = metrics.heightPixels - statusBarHeight;
         int dPadRadius = (int)(usableHeight * 0.6/2);
         //NOTE: currently assumes landscape mode
         Circle circle = new Circle((int)(dPadRadius * 1.3), usableHeight / 2, dPadRadius, Color.LTGRAY);
@@ -153,6 +163,10 @@ public class WreckRollActivity extends Activity {
         
     }
     
+    protected String generateRandomSpyMessage() {
+        return "I am the very model of a modern major general\nInformation, vegetable,\n animal or mineral";
+    }
+
     protected void saveImage(Bitmap backgroundImage) {
         File imagesFolder = new File(Environment.getExternalStorageDirectory(), "WreckRoll");
         imagesFolder.mkdirs(); 

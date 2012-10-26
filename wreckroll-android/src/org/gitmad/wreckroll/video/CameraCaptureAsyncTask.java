@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -34,6 +36,9 @@ public class CameraCaptureAsyncTask extends AsyncTask {
     private ImageProcessor[] imageProcessors;
     private String ipAddr;
 
+    Profiler resetProf = new Profiler("resetAfterExtracting", 10);
+    private CapturedImage currentImage;
+    
     public CameraCaptureAsyncTask(WreckRollActivity wreckRollActivity, String ipAddr, ImageProcessor ... imageProcessors) {
         this.wreckRollActivity = wreckRollActivity;
         this.ipAddr = ipAddr;
@@ -44,10 +49,6 @@ public class CameraCaptureAsyncTask extends AsyncTask {
         this.wreckRollActivity.getWindowManager().getDefaultDisplay().getMetrics(this.displayMetrics);
     }
 
-    Profiler resetProf = new Profiler("resetAfterExtracting", 10);
-    private Bitmap currentBitmap;
-    private Bitmap backupBitmap;
-    
     private class ImageDescriptor {
         public ImageDescriptor(int start, int length) {
             this.start  = start;
@@ -93,7 +94,7 @@ public class CameraCaptureAsyncTask extends AsyncTask {
                     }
                     int left = offset - id.end;
                     System.arraycopy(totalBuf, id.end, sideBuf, 0, left);
-                    System.arraycopy(sideBuf,  0, totalBuf, 0, left);
+                    System.arraycopy(sideBuf,  0,     totalBuf, 0, left);
                     offset = left;
                     resetProf.exit();
                 }
@@ -106,40 +107,27 @@ public class CameraCaptureAsyncTask extends AsyncTask {
         return null;
     }
 
-    public Bitmap getCurrentBitmap() {
-        return currentBitmap;
+    public CapturedImage getCurrentImage() {
+        return currentImage;
     }
 
     private void updateBitmap(byte[] buf, ImageDescriptor id) {
         //TODO: may have to double buffer the bitmaps
         BitmapFactory.Options opts = new BitmapFactory.Options();
         opts.inSampleSize = 2;
-//        opts.inBitmap = this.currentBitmap;
-        Bitmap old = this.currentBitmap;
+        Bitmap old = this.currentImage.getBitmap();
         Bitmap newBitmap = BitmapFactory.decodeByteArray(buf, id.start, id.length, opts);
         
+        Map<String, String> attributes = new HashMap<String, String>();
         for (ImageProcessor processor : this.imageProcessors) {
-            newBitmap = processor.process(newBitmap);
+            newBitmap = processor.process(newBitmap, attributes);
         }
-        this.currentBitmap = newBitmap;
+        this.currentImage = new CapturedImage(newBitmap, attributes);
         if (old != null) {
             old.recycle();
         }
-//        this.currentBitmap = b.createScaledBitmap(b, this.displayMetrics.widthPixels, this.displayMetrics.heightPixels, false);
-//        b.recycle();
-//        if (opts.inBitmap != this.currentBitmap && opts.inBitmap != null) {
-//            opts.inBitmap.recycle();
-//        }
-        
     }
     
-    private Bitmap swapBitmaps() {
-        Bitmap tmp = this.currentBitmap;
-        this.currentBitmap = this.backupBitmap;
-        this.backupBitmap  = tmp;
-        return this.currentBitmap;
-    }
-
     //NOTE: BEWARE: thar be dragons ahead (hackathon quality code, watch your step)
     Profiler extractProf = new Profiler("extractImage", 10);
     private ImageDescriptor extractImage(byte [] buf, int length) throws IOException {

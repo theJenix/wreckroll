@@ -7,7 +7,9 @@ import java.util.List;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Paint.Style;
 import android.graphics.Rect;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
@@ -31,6 +33,7 @@ public class ControllerBoard extends SurfaceView implements SurfaceHolder.Callba
     private Bitmap backgroundImage;
     private List<TouchPoint> touchPoints = new ArrayList<TouchPoint>();
     private OnDrawListener onDrawListener;
+    private TextWriter message;
     
     public ControllerBoard(Context context) {
         this(context, null);
@@ -88,6 +91,7 @@ public class ControllerBoard extends SurfaceView implements SurfaceHolder.Callba
     @Override
     public void onDraw(Canvas canvas) {
         this.onDrawListener.onPreDraw();
+        canvas.drawColor(Color.BLACK);
         if (this.backgroundImage != null) {
             Paint paint = new Paint();
             Rect rect = new Rect();
@@ -98,6 +102,11 @@ public class ControllerBoard extends SurfaceView implements SurfaceHolder.Callba
         for (TouchPoint tp : this.touchPoints) {
             tp.draw(canvas);
         }
+        
+        if (this.message != null) {
+            this.message.writeNext(canvas);
+        }
+        
         this.onDrawListener.onPostDraw();
     }
 
@@ -115,5 +124,14 @@ public class ControllerBoard extends SurfaceView implements SurfaceHolder.Callba
 
     public void setOnDrawListener(OnDrawListener onDrawListener) {
         this.onDrawListener = onDrawListener;
-    }    
+    }
+
+    public void setMessage(TextWriter message) {
+        if (!isWritingMessage()) {
+            this.message = message;
+        }
+    }
+    public boolean isWritingMessage() {
+        return this.message != null && this.message.isWriting();
+    }
 }

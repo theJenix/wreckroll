@@ -41,55 +41,36 @@ public class RelayClient implements WreckClient {
 	        }
 	    }
     }
-    
-    
-    public void forward() {
         
-//        this.out.wr
-        // TODO Auto-generated method stub
+    public void forward() {
     	sendCommand("forward");
     }
-
     
     public void stop() {
-        // TODO Auto-generated method stub
     	sendCommand("stop");
     }
-
     
     public void reverse() {
-        // TODO Auto-generated method stub
     	sendCommand("referse");
     }
-
     
     public void left() {
-        // TODO Auto-generated method stub
     	sendCommand("left");
-        
     }
-
     
     public void right() {
-        // TODO Auto-generated method stub
     	sendCommand("right");
     }
-
     
     public void toggleGun() {
-        // TODO Auto-generated method stub
     	sendCommand("gun");
     }
-
     
     public void toggleSmoke() {
-        // TODO Auto-generated method stub
     	sendCommand("smoke");
     }
-
-    
+   
     public void toggleCanopy() {
-        // TODO Auto-generated method stub
-    	sendCommand("canopy");
+     	sendCommand("canopy");
     }
 }

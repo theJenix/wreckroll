@@ -1,8 +1,9 @@
 package org.gitmad.wreckroll.video;
 
+import java.util.Map;
+
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.PointF;
@@ -15,6 +16,8 @@ public class SpyHardProcessor implements ImageProcessor {
     private int maxFaces;
     private Paint paint;
 
+    public static final String ATTR_FACE_FOUND = "faceFound";
+
     public SpyHardProcessor(int maxFaces, int color, int alpha) {
         this.maxFaces = maxFaces;
         this.paint = new Paint();
@@ -22,7 +25,7 @@ public class SpyHardProcessor implements ImageProcessor {
         this.paint.setAlpha(alpha);
     }
 
-    public Bitmap process(Bitmap bitmap) {
+    public Bitmap process(Bitmap bitmap, Map<String, String> imageAttributes) {
         Bitmap bmp565 = bitmap.copy(Bitmap.Config.RGB_565, false);
         FaceDetector fd = new FaceDetector(bitmap.getWidth(), bitmap.getHeight(), this.maxFaces);
         
@@ -35,6 +38,7 @@ public class SpyHardProcessor implements ImageProcessor {
             Bitmap old = bitmap;
             bitmap = annotated.copy(bitmap.getConfig(), bitmap.isMutable());
             old.recycle();
+            imageAttributes.put(ATTR_FACE_FOUND, "true");
         }
         
         bmp565.recycle();
