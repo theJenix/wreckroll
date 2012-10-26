@@ -4,7 +4,7 @@ public class DebugClient implements WreckClient {
 
     
     public void forward() {
-        System.out.println("FORWARD");
+        System.out.println("FORWARD");  
     }
 
     

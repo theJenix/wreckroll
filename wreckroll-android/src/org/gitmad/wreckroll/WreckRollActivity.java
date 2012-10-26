@@ -11,16 +11,19 @@ import org.gitmad.wreckroll.canvas.OnDrawListener;
 import org.gitmad.wreckroll.canvas.OnTouchPointListener;
 import org.gitmad.wreckroll.canvas.TouchPoint;
 import org.gitmad.wreckroll.canvas.TypewriterTextWriter;
-import org.gitmad.wreckroll.client.RelayClient;
+import org.gitmad.wreckroll.client.DebugClient;
 import org.gitmad.wreckroll.client.WreckClient;
 import org.gitmad.wreckroll.util.CountdownTimer;
 import org.gitmad.wreckroll.video.CameraCaptureAsyncTask;
 import org.gitmad.wreckroll.video.SpyHardProcessor;
 
 import android.app.Activity;
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.hardware.Sensor;
+import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.os.Environment;
 import android.util.DisplayMetrics;
@@ -38,11 +41,21 @@ public class WreckRollActivity extends Activity {
 
     private CountdownTimer freezeFrameTimer = new CountdownTimer();
     
+    private SensorManager mSensorManager;
+    private Sensor mSensor;
+    private SteeringWheel steeringWheel;
+
+    public WreckRollActivity() {
+    }
+    
     /** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
+
+        mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+        mSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
         
         final ControllerBoard board = ((ControllerBoard)findViewById(R.id.panel));
 
@@ -86,12 +99,11 @@ public class WreckRollActivity extends Activity {
                 //nothing to do
             }
         });
-        
-        //draw the buttons as touchpoint controls
 
-        int dPadRadius = (int)(usableHeight * 0.6/2);
-        //NOTE: currently assumes landscape mode
-        Circle circle = new Circle((int)(dPadRadius * 1.3), usableHeight / 2, dPadRadius, Color.LTGRAY);
+        int spacing = usableHeight / 5;
+        int radius  = usableHeight / 10;
+
+        Circle circle = new Circle(radius, radius, radius, Color.GREEN);
         board.addTouchPoint(circle);
         
         circle.setOnTouchListener(new OnTouchPointListener() {
@@ -100,13 +112,84 @@ public class WreckRollActivity extends Activity {
             }
 
             public void touchPerformed(TouchPoint point, float x, float y) {
-                processMovement((Circle) point, x, y);
+                client.forward();
             }
         });
         
-        int radius = usableHeight / 8;
+        circle = new Circle(radius, 3 * radius, radius, Color.RED);
+        board.addTouchPoint(circle);
+        
+        circle.setOnTouchListener(new OnTouchPointListener() {
+            public boolean isSupportedAction(int action) {
+                return action != MotionEvent.ACTION_UP;
+            }
 
-        Circle smokeButton = new Circle(metrics.widthPixels - 200, 1 * usableHeight / 2 - radius / 2, radius, Color.RED);
+            public void touchPerformed(TouchPoint point, float x, float y) {
+                client.stop();
+            }
+        });
+        
+        circle = new Circle(radius, 5 * radius, radius, Color.CYAN);
+        board.addTouchPoint(circle);
+        
+        circle.setOnTouchListener(new OnTouchPointListener() {
+            public boolean isSupportedAction(int action) {
+                return action != MotionEvent.ACTION_UP;
+            }
+
+            public void touchPerformed(TouchPoint point, float x, float y) {
+                client.left();
+            }
+        });
+        
+        circle = new Circle(radius, 7 * radius, radius, Color.BLUE);
+        board.addTouchPoint(circle);
+        
+        circle.setOnTouchListener(new OnTouchPointListener() {
+            public boolean isSupportedAction(int action) {
+                return action != MotionEvent.ACTION_UP;
+            }
+
+            public void touchPerformed(TouchPoint point, float x, float y) {
+                client.right();
+            }
+        });
+        
+        circle = new Circle(radius, 9 * radius, radius, Color.YELLOW);
+        board.addTouchPoint(circle);
+        
+        circle.setOnTouchListener(new OnTouchPointListener() {
+            public boolean isSupportedAction(int action) {
+                return action != MotionEvent.ACTION_UP;
+            }
+
+            public void touchPerformed(TouchPoint point, float x, float y) {
+                client.reverse();
+            }
+        });
+//
+//
+//        //draw the buttons as touchpoint controls
+//
+//        int dPadRadius = (int)(usableHeight * 0.6/2);
+//        //NOTE: currently assumes landscape mode
+//        Circle circle = new Circle((int)(dPadRadius * 1.3), usableHeight / 2, dPadRadius, Color.LTGRAY);
+//        board.addTouchPoint(circle);
+//        
+//        circle.setOnTouchListener(new OnTouchPointListener() {
+//            public boolean isSupportedAction(int action) {
+//                return action != MotionEvent.ACTION_UP;
+//            }
+//
+//            public void touchPerformed(TouchPoint point, float x, float y) {
+//                processMovement((Circle) point, x, y);
+//            }
+//        });
+//        
+//        int radius = usableHeight / 8;
+
+        radius = usableHeight / 8; //4 buttons
+        Circle smokeButton = new Circle(metrics.widthPixels - radius, radius, radius, Color.RED);
         board.addTouchPoint(smokeButton);
         smokeButton.setOnTouchListener(new OnTouchPointListener() {
             public boolean isSupportedAction(int action) {
@@ -118,7 +201,7 @@ public class WreckRollActivity extends Activity {
             }
         });
         
-        Circle gunButton       = new Circle(metrics.widthPixels - 75, 1 * usableHeight / 4, radius, Color.RED);
+        Circle gunButton       = new Circle(metrics.widthPixels - radius, 3 * radius, radius, Color.RED);
         board.addTouchPoint(gunButton);
         gunButton.setOnTouchListener(new OnTouchPointListener() {
             public boolean isSupportedAction(int action) {
@@ -130,7 +213,7 @@ public class WreckRollActivity extends Activity {
             }
         });
 
-        Circle canopyButton    = new Circle(metrics.widthPixels - 200, 3 * usableHeight / 4, radius, Color.RED);
+        Circle canopyButton    = new Circle(metrics.widthPixels - radius, 5 * radius, radius, Color.RED);
         board.addTouchPoint(canopyButton);
         canopyButton.setOnTouchListener(new OnTouchPointListener() {
             
@@ -142,12 +225,10 @@ public class WreckRollActivity extends Activity {
                 client.toggleCanopy();
             }
         });
-        Circle startStopButton = new Circle(metrics.widthPixels - 75, 1 * usableHeight / 2 + radius / 2, radius, Color.RED);
-        board.addTouchPoint(startStopButton);
 
         Bitmap bitmap = BitmapFactory.decodeResource(this.getResources(), R.drawable.camera);
         bitmap = Bitmap.createScaledBitmap(bitmap, bitmap.getWidth()/2, bitmap.getHeight()/2, false);
-        Image snapShotButton = new Image(bitmap, usableWidth / 2, 100);
+        Image snapShotButton = new Image(bitmap, metrics.widthPixels - radius, 7 * radius);
         board.addTouchPoint(snapShotButton);
         snapShotButton.setOnTouchListener(new OnTouchPointListener() {
 
@@ -160,7 +241,8 @@ public class WreckRollActivity extends Activity {
                 WreckRollActivity.this.freezeFrameTimer.start(FREEZE_FRAME_TIME_MS);
             }
         });
-        
+    
+//        mSensor.
     }
     
     protected String generateRandomSpyMessage() {
@@ -226,24 +308,78 @@ public class WreckRollActivity extends Activity {
         this.cameraCaptureTask.execute();
         
         try {
-//            this.client = new DebugClient(); // DirectArduinoClient();
+            this.client = new DebugClient(); // DirectArduinoClient();
             ///TODO: connect to registrar
             String ipRelay   = "192.168.1.134";
             short  relayPort = 6696;
-            this.client = new RelayClient(ipRelay, relayPort);
+//            this.client = new RelayClient(ipRelay, relayPort);
         } catch (Exception e) {
             e.printStackTrace();
             throw new RuntimeException(e);
         }
+        
+        this.steeringWheel = new SteeringWheel(this.client);
+        mSensorManager.registerListener(this.steeringWheel, mSensor, SensorManager.SENSOR_DELAY_NORMAL);
+        
     }
     
     @Override
     protected void onPause() {
         super.onPause();
         this.cameraCaptureTask.cancel(true);
+        mSensorManager.unregisterListener(this.steeringWheel);
     }
 
     void setPanelBackground(Bitmap bitmap) {
         ((ControllerBoard)findViewById(R.id.panel)).setBackgroundImage(bitmap);
     }
+    
+    
+    /*
+ // Create a constant to convert nanoseconds to seconds.
+    private static final float NS2S = 1.0f / 1000000000.0f;
+    private final float[] deltaRotationVector = new float[4]();
+    private float timestamp;
+
+    public void onSensorChanged(SensorEvent event) {
+      // This timestep's delta rotation to be multiplied by the current rotation
+      // after computing it from the gyro sample data.
+      if (timestamp != 0) {
+        final float dT = (event.timestamp - timestamp) * NS2S;
+        // Axis of the rotation sample, not normalized yet.
+        float axisX = event.values[0];
+        float axisY = event.values[1];
+        float axisZ = event.values[2];
+
+        // Calculate the angular speed of the sample
+        float omegaMagnitude = Math.sqrt(axisX*axisX + axisY*axisY + axisZ*axisZ);
+
+        // Normalize the rotation vector if it's big enough to get the axis
+        // (that is, EPSILON should represent your maximum allowable margin of error)
+        if (omegaMagnitude > EPSILON) {
+          axisX /= omegaMagnitude;
+          axisY /= omegaMagnitude;
+          axisZ /= omegaMagnitude;
+        }
+
+        // Integrate around this axis with the angular speed by the timestep
+        // in order to get a delta rotation from this sample over the timestep
+        // We will convert this axis-angle representation of the delta rotation
+        // into a quaternion before turning it into the rotation matrix.
+        float thetaOverTwo = omegaMagnitude * dT / 2.0f;
+        float sinThetaOverTwo = sin(thetaOverTwo);
+        float cosThetaOverTwo = cos(thetaOverTwo);
+        deltaRotationVector[0] = sinThetaOverTwo * axisX;
+        deltaRotationVector[1] = sinThetaOverTwo * axisY;
+        deltaRotationVector[2] = sinThetaOverTwo * axisZ;
+        deltaRotationVector[3] = cosThetaOverTwo;
+      }
+      timestamp = event.timestamp;
+      float[] deltaRotationMatrix = new float[9];
+      SensorManager.getRotationMatrixFromVector(deltaRotationMatrix, deltaRotationVector);
+        // User code should concatenate the delta rotation we computed with the current rotation
+        // in order to get the updated rotation.
+        // rotationCurrent = rotationCurrent * deltaRotationMatrix;
+       }
+    }*/
 }
