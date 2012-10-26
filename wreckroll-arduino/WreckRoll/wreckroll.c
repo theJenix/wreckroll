@@ -47,26 +47,46 @@
 #include "uip.h"
 #include <string.h>
 #include "wreckroll.h"
+#include "registrar.h"
 
 extern unsigned short port;
 
 handler_callback handler;
 
+int run_state = STATE_UNREGISTERED;
 /*
  * Declaration of the protosocket function that handles the connection
  * (defined at the end of the code).
  */
 int handle_connection(struct socket_app_state *s);
+unsigned char check_if_registrar();
+
+socket_handler s_handler = check_if_registrar;
+
 
 /*---------------------------------------------------------------------------*/
+
+void add_socket_handler(socket_handler s) {
+  s_handler = s;
+  
+}
 void set_command_handler(handler_callback h) {
  handler = h;
 }
 
-void test() {
+int get_run_state() {
+  return run_state;
 }
-/*---------------------------------------------------------------------------*/
 
+void register_me() {
+  run_state = STATE_REGISTERING;
+  connect_to_registrar();
+}
+
+void finished_register() {
+  run_state = STATE_RUNNING;
+  close_registrar();
+}
 /*---------------------------------------------------------------------------*/
 /*
  * The initialization function. We must explicitly call this function
@@ -75,6 +95,8 @@ void test() {
  */
 void socket_app_init(void)
 {
+  debug("in socket_app_init");
+
   /* We start to listen for connections on TCP port 1000. */
   uip_listen(HTONS(port));
 }
@@ -88,27 +110,38 @@ void socket_app_init(void)
  */
 void socket_app_appcall(void)
 {
-  /*
-   * The uip_conn structure has a field called "appstate" that holds
-   * the application state of the connection. We make a pointer to
-   * this to access it easier.
-   */
-  struct socket_app_state *s = &(uip_conn->appstate);
-
-  /*
-   * If a new connection was just established, we should initialize
-   * the protosocket in our applications' state structure.
-   */
-  if(uip_connected()) {
-    PSOCK_INIT(&s->p, s->inputbuffer, sizeof(s->inputbuffer));
+  debug("in socket_app_appcall");
+  
+  //check to see if we're working with the registrar
+  unsigned char handled = s_handler != NULL ? s_handler() : 0;
+  
+  //if not, we're working with a client...do that shtuff here
+  if (!handled) {
+    
+    /*
+     * The uip_conn structure has a field called "appstate" that holds
+     * the application state of the connection. We make a pointer to
+     * this to access it easier.
+     */
+    struct socket_app_state *s = &(uip_conn->appstate);
+  
+    /*
+     * If a new connection was just established, we should initialize
+     * the protosocket in our applications' state structure.
+     */
+    if(uip_connected()) {
+      debug("Handling connection");
+      PSOCK_INIT(&s->p, s->inputbuffer, sizeof(s->inputbuffer));
+    }
+  
+    /*
+     * Finally, we run the protosocket function that actually handles
+     * the communication. We pass it a pointer to the application state
+     * of the current connection.
+     */
+     debug("Handling connection");
+     handle_connection(s);
   }
-
-  /*
-   * Finally, we run the protosocket function that actually handles
-   * the communication. We pass it a pointer to the application state
-   * of the current connection.
-   */
-  handle_connection(s);
 }
 /*---------------------------------------------------------------------------*/
 /*
@@ -129,3 +162,38 @@ int handle_connection(struct socket_app_state *s)
 }
 
 /*---------------------------------------------------------------------------*/
+
+unsigned char check_if_registrar() {
+  unsigned char retval = 0;
+  if (run_state == STATE_REGISTERING) {
+    retval = 1;
+    
+//      if(uip_aborted()) {
+//    debug("Connection aborted...something's wrong");
+//    return;
+//  }
+
+char buf[32];
+sprintf(buf, "%X", uip_flags);
+debug(buf);
+//  if (uip_acked()) {
+//    return; //nothing to do
+//  }
+  
+
+    if (uip_aborted()) {
+      connect_to_registrar();
+    } else if (uip_closed()) {
+    } else if (uip_newdata()) {
+      if (get_post_count() > 0) {
+        finished_register();
+      }
+    } else if (uip_acked()) {
+    } else if (uip_poll()) {
+      if (get_post_count() < 3) {
+        post_to_registrar();
+      }
+    } 
+  }
+  return retval;
+}

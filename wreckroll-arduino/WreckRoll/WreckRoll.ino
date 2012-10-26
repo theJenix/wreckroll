@@ -3,7 +3,9 @@
  */
 
 #include <WiShield.h>
+//#include <WiServer.h>
 //#include <dataflash.h>
+#include "registrar.h"
 #include "wreckroll.h"
 
 #define WIRELESS_MODE_INFRA    1
@@ -12,7 +14,9 @@
 #define FLASH_SLAVE_SELECT 7
 #define WIFI_SLAVE_SELECT  10
 
-// Server configuration parameters ------------------------------------------
+// WreckRoll configuration parameters ------------------------------------------
+
+unsigned char _ip[]    = {192,168,1,2};	// IP address of WiShield
 
 unsigned short port = 9000;
 
@@ -80,45 +84,56 @@ struct wreck_state {
 
 wreck_state ws = {0};
 
+void debug(char *msg) {
+  Serial.println(msg);
+}
+
 void setup()
 {
   initShield();
+//  registerThyself();
   set_command_handler(handle_command);
-
+//delay(2000);
+  
+//    Serial.println("Success!");
+//  } else {
+//    Serial.println("NO WAY!");
+//  }
 //  WiServer.enableVerboseMode(true);
 }
 
-// This is the webpage that is served up by the webserver
-const prog_char webpage[] PROGMEM = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n"
-									"<html><body style=\"margin:100px\">"
-									"<center>"
-									"<h1>Flash Mfg ID: 000 000 000</h1>"
-									"<form method=post action=\"/upload\" enctype=\"multipart/form-data\">"
-									"<b>FS Image Upload</b>"
-									"<p>"
-									"<input type=file name=i size=40> &nbsp; <input type=submit value=\"Upload\">"
-									"</form>"
-									"</center>"
-									"</body></html>";
+//POSTrequest registerIp(registrar_ip, 8000, "192.168.1.134", "/ardi", NULL);
 
+int loop_cnt = 0;
 void loop()
 { 
+
   //dflash.read_id(mfg_id);
+//  Serial.println("Sending IP to registrar");
+  if (loop_cnt == 0) {
+    register_me();
+    loop_cnt = 1;
+  }
 
   WiFi.run();
 
-  //advance any movement/actions that are held in the state.  this will be influenced
-  // by commands received over the socket
-  turn_wreck();
-  move_wreck();
-  toggle_gun();
-  toggle_smoke();
-  toggle_canopy();
+  if (get_run_state() == STATE_RUNNING) {
+    //advance any movement/actions that are held in the state.  this will be influenced
+    // by commands received over the socket
+    turn_wreck();
+    move_wreck();
+    toggle_gun();
+    toggle_smoke();
+    toggle_canopy();
+  }
 
 }
 
 void initShield()
 {
+  // Enable Serial output and ask WiServer to generate log messages (optional)
+  Serial.begin(57600);
+
   // there is some contention on the SPI between the flash and wifi chip,
   // so disable both devices at the beginning until they are properly
   // initialized by their respective libraries
@@ -132,8 +147,6 @@ void initShield()
 
   // now init wifi
   WiFi.init();
-  // Enable Serial output and ask WiServer to generate log messages (optional)
-  Serial.begin(57600);
   Serial.println("Init'd");
 }
 
