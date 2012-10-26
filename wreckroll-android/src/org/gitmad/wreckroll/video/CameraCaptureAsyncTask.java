@@ -16,6 +16,13 @@ import android.os.AsyncTask;
 import android.os.Handler;
 import android.util.DisplayMetrics;
 
+/**
+ * 
+ * NOTE: this class must be created and run from a main thread, because we create a Handler in the constructor.
+ * 
+ * @author Jesse Rosalia
+ *
+ */
 public class CameraCaptureAsyncTask extends AsyncTask {
 
     /**
@@ -24,13 +31,15 @@ public class CameraCaptureAsyncTask extends AsyncTask {
     private final WreckRollActivity wreckRollActivity;
     private Handler handler;
     private DisplayMetrics displayMetrics;
+    private ImageProcessor[] imageProcessors;
 
-    public CameraCaptureAsyncTask(WreckRollActivity wreckRollActivity, Handler handler) {
+    public CameraCaptureAsyncTask(WreckRollActivity wreckRollActivity, ImageProcessor ... imageProcessors) {
         this.wreckRollActivity = wreckRollActivity;
-        this.handler = handler;
+        this.handler = new Handler();
         this.displayMetrics = new DisplayMetrics();
         this.wreckRollActivity.getWindowManager().getDefaultDisplay().getMetrics(this.displayMetrics);
 
+        this.imageProcessors = imageProcessors;
     }
 
     Profiler resetProf = new Profiler("resetAfterExtracting", 10);
@@ -65,7 +74,7 @@ public class CameraCaptureAsyncTask extends AsyncTask {
             
             int counter = 0;
             long startTime = System.currentTimeMillis();
-            float fps = 5.0f;
+            float fps = 30.0f;
             float fpsMillis = 1000/fps;
             while (!this.isCancelled() && (read = is.read(buf)) != -1) {
                 System.arraycopy(buf, 0, totalBuf, offset, read);
@@ -105,8 +114,12 @@ public class CameraCaptureAsyncTask extends AsyncTask {
         opts.inSampleSize = 2;
 //        opts.inBitmap = this.currentBitmap;
         Bitmap old = this.currentBitmap;
-        this.currentBitmap = BitmapFactory.decodeByteArray(buf, id.start, id.length, opts);
+        Bitmap newBitmap = BitmapFactory.decodeByteArray(buf, id.start, id.length, opts);
         
+        for (ImageProcessor processor : this.imageProcessors) {
+            newBitmap = processor.process(newBitmap);
+        }
+        this.currentBitmap = newBitmap;
         if (old != null) {
             old.recycle();
         }

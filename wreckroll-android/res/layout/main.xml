@@ -5,7 +5,7 @@
     android:orientation="vertical"
     android:id="@+id/main_layout">
 
-    <org.gitmad.canvas.ControllerBoard
+    <org.gitmad.wreckroll.canvas.ControllerBoard
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:id="@+id/panel"

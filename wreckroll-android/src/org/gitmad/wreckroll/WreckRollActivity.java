@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.util.Date;
 
-import org.gitmad.R;
 import org.gitmad.wreckroll.canvas.Circle;
 import org.gitmad.wreckroll.canvas.ControllerBoard;
 import org.gitmad.wreckroll.canvas.Image;
@@ -15,12 +14,12 @@ import org.gitmad.wreckroll.client.DebugClient;
 import org.gitmad.wreckroll.client.WreckClient;
 import org.gitmad.wreckroll.util.CountdownTimer;
 import org.gitmad.wreckroll.video.CameraCaptureAsyncTask;
+import org.gitmad.wreckroll.video.SpyHardProcessor;
 
 import android.app.Activity;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
-import android.media.FaceDetector;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
@@ -62,7 +61,6 @@ public class WreckRollActivity extends Activity {
             public void onPreDraw() {
                 if (!WreckRollActivity.this.freezeFrameTimer.poll()) {
                     Bitmap bmp = cameraCaptureTask.getCurrentBitmap();
-                    FaceDetector fd = new FaceDetector(bmp.getWidth(), bmp.getHeight(), MAX_DETECTED_FACES);
                     //set the latest bitmap captured from the camera
                     board.setBackgroundImage(bmp);
                 }
@@ -219,7 +217,8 @@ public class WreckRollActivity extends Activity {
     protected void onResume() {
         super.onResume();
         
-        this.cameraCaptureTask = new CameraCaptureAsyncTask(this, new Handler());
+//        int color = 224, 170, 15 or 183, 135, 39
+        this.cameraCaptureTask = new CameraCaptureAsyncTask(this, new Handler(), new SpyHardProcessor(MAX_DETECTED_FACES, Color.YELLOW, 50));
         this.cameraCaptureTask.execute();
         
         try {
