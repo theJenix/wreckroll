@@ -57,13 +57,16 @@ var sendcommand = function(com){
         client.end();
       });
     }
+  } else {
+    console.log('sending command', com);
   }
 };
 
 setrelay();
-getardi();
+//getardi();
 
 http.createServer(function(req, res){
+  console.log('connection received');
   req.on('data', function(chunk){
     try {
       console.log(chunk.toString());
