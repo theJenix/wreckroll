@@ -98,6 +98,11 @@ struct wreck_state {
 int speedDirPin = 12;
 int speedPMPin = 10;
 
+int turnDirPin = 9;
+int turnPMPin = 8;
+
+int rightSensorPin = 3;
+int leftSensorPin = 4;
 
 wreck_state ws = {0};
 
@@ -111,6 +116,8 @@ void setup()
   set_command_handler(handle_command);
   ws.speedPM = 0;
   ws.speedDir = 0;
+  ws.turnDir = 0;
+  ws.turnPM = 0;
   updateToPins();
 }
 
@@ -264,6 +271,22 @@ void turn_wreck() {
   if (ws.turn_left > 0) {
     Serial.print("Turning the wreck ");
     Serial.println(ws.turn == 'L' ? "left" : "right");
+    
+    if (ws.turn == 'L' && digitalRead(leftSensorPin) == LOW){
+      ws.turnPM = 255;
+    } else if (ws.turn == 'L'){
+      ws.turnPM = 0;
+    } else if (ws.turn == 'R' && digitalRead(rightSensorPin) == LOW){
+      ws.turnPM = 255;
+    } else {
+      ws.turnPM = 0;
+    }
+
+    ws.turnDir = ws.turn =='L'? 'L' : 'R';
+
+    analogWrite(turnPMPin, ws.turnPM);
+    digitalWrite(turnDirPin, ws.turnDir);
+
       
     int blinkSpeed = ws.movement == 'L' ? 750 : 1500;
     doBlink(FLASH_SLAVE_SELECT, blinkSpeed);
