@@ -7,6 +7,7 @@
 //#include <dataflash.h>
 #include "registrar.h"
 #include "wreckroll.h"
+#include "debug.h"
 
 #define WIRELESS_MODE_INFRA    1
 #define WIRELESS_MODE_ADHOC    2
@@ -16,7 +17,8 @@
 
 // WreckRoll configuration parameters ------------------------------------------
 
-unsigned char registrar_ip[]    = {192,168,1,2};	// IP address of WiShield
+unsigned char registrar_ip[]    = {192,168,1,112};	// IP address of WiShield
+short registrar_port = 8001;
 
 unsigned short port = 9000;
 
@@ -55,9 +57,9 @@ unsigned char security_passphrase_len;
 #define SUBSYS_STOWED 0
 #define SUBSYS_DEPLOYED 1
 
-#define CAR_MOTION_STEPS 10
-#define CAR_STOP_STEPS    1
-#define CAR_TURN_STEPS    1
+#define CAR_MOTION_MS 200
+#define CAR_STOP_MS   1
+#define CAR_TURN_MS   200
 #define GUN_MOTION_STEPS 10
 #define SMOKE_MOTION_STEPS 10
 #define CANOPY_MOTION_STEPS 10
@@ -65,6 +67,9 @@ unsigned char security_passphrase_len;
 //unsigned char mfg_id[4];
 
 struct wreck_state {
+  unsigned long last_time;
+  unsigned long elapsed_time;
+  
   char movement_left;
   char movement;
   
@@ -116,6 +121,12 @@ void loop()
   }
 
   WiFi.run();
+  
+  unsigned long this_time = millis();
+  if (ws.last_time != 0) {
+    ws.elapsed_time = this_time - ws.last_time;
+  }
+  
 
   if (get_run_state() == STATE_RUNNING) {
     //advance any movement/actions that are held in the state.  this will be influenced
@@ -126,6 +137,9 @@ void loop()
     toggle_smoke();
     toggle_canopy();
   }
+  
+  //use the time captured above..that means that an operation that takes 200ms will account for time performing the operation
+  ws.last_time = this_time;
 
 }
 
@@ -166,7 +180,7 @@ void update_state(char command) {
         break;
       }
       ws.movement = 'F';
-      ws.movement_left = CAR_MOTION_STEPS;
+      ws.movement_left = CAR_MOTION_MS;
       break;
     case 'V': //reverse
       if (ws.movement == 'F') {
@@ -174,22 +188,22 @@ void update_state(char command) {
         break;
       }
       ws.movement = 'R';
-      ws.movement_left = CAR_MOTION_STEPS;
+      ws.movement_left = CAR_MOTION_MS;
       break;
     case 'S': //stop
       if (ws.movement == 'S') {
         break; //nothing to do
       }
       ws.movement = 'S';
-      ws.movement_left = CAR_STOP_STEPS;
+      ws.movement_left = CAR_STOP_MS;
       break;
     case 'L':
       ws.turn = 'L';
-      ws.turn_left = CAR_TURN_STEPS;
+      ws.turn_left = CAR_TURN_MS;
       break;
     case 'R':
       ws.turn = 'R';
-      ws.turn_left = CAR_TURN_STEPS;
+      ws.turn_left = CAR_TURN_MS;
       break;  
     case 'G': //toggle gun
       if (ws.gun_motion_left == 0) {
@@ -219,7 +233,7 @@ void turn_wreck() {
       
     int blinkSpeed = ws.movement == 'L' ? 750 : 1500;
     doBlink(FLASH_SLAVE_SELECT, blinkSpeed);
-    ws.movement_left--;
+    ws.turn_left -= ws.elapsed_time;
   }
 }
 //NOTE: includes "stop"
@@ -236,7 +250,7 @@ void move_wreck() {
       doBlink(FLASH_SLAVE_SELECT, 500);
       doBlink(FLASH_SLAVE_SELECT, 500);
     }      
-    ws.movement_left--;
+    ws.movement_left -= ws.elapsed_time;
   }
 }
 
@@ -244,7 +258,7 @@ void toggle_gun() {
 //simulate moving the gun
   if (ws.gun_motion_left > 0) {
     doBlink(FLASH_SLAVE_SELECT, 250);
-    ws.gun_motion_left--;
+    ws.gun_motion_left -= ws.elapsed_time;
   }
 }
 
@@ -252,14 +266,14 @@ void toggle_smoke() {
 //simulate moving the smoke
   if (ws.smoke_motion_left > 0) {
     doBlink(FLASH_SLAVE_SELECT, 250);
-    ws.smoke_motion_left--;
+    ws.smoke_motion_left -= ws.elapsed_time;
   }
 }
 
 void toggle_canopy() {
   if (ws.canopy_motion_left > 0) {
     doBlink(FLASH_SLAVE_SELECT, 250);
-    ws.canopy_motion_left--;
+    ws.canopy_motion_left -= ws.elapsed_time;
   }
 }
   

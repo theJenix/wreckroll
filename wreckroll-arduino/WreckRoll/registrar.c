@@ -2,9 +2,8 @@
 #include "socketapp.h"
 #include "registrar.h"
 #include "uip.h"
+#include "debug.h"
 
-unsigned char registrar_ip[]    = {192,168,1,112};	// IP address of WiShield
-short registrar_port = 8001;
 int post_count = 0;
 /*---------------------------------------------------------------------------*/
 unsigned char connect_to_registrar() {
