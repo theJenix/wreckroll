@@ -17,7 +17,8 @@ var tomer = {
   stop:"s",
   gun:"g",
   smoke:"m",
-  canopy:"e"
+  canopy:"e",
+  emergency:"x"
 };
 
 var ardi = null;
