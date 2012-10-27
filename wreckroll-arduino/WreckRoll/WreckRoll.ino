@@ -86,7 +86,15 @@ struct wreck_state {
   boolean canopy_state; 
   
   boolean emergency_stop;
+  int speedPM;
+  int speedDir;
+  
 };
+
+// Pins
+int speedDirPin = 1;
+int speedPMPin = 1;
+
 
 wreck_state ws = {0};
 
@@ -98,6 +106,8 @@ void setup()
 {
   initShield();
   set_command_handler(handle_command);
+  ws.speedPM = 0;
+  ws.speedDir = 0;
 }
 
 int loop_cnt = 0;
@@ -167,6 +177,9 @@ void update_state(char command) {
   switch(command & ~0x20) { //always uppercase
     case 'F': //forward
       if (ws.movement == 'R') {
+        ws.movement = 'S';
+        ws.movement_left = CAR_MOTION_MS;
+
         //TODO: status message back to caller
         break;
       }
@@ -175,6 +188,8 @@ void update_state(char command) {
       break;
     case 'V': //reverse
       if (ws.movement == 'F') {
+        ws.movement = 'S';
+        ws.movement_left = CAR_MOTION_MS;
         //TODO: status message back to caller
         break;
       }
@@ -254,7 +269,26 @@ void move_wreck() {
       doBlink(FLASH_SLAVE_SELECT, 500);
     }      
     ws.movement_left -= ws.elapsed_time;
+  } else {
+      decreaseSpeedPM(); 
   }
+}
+
+void updateToPins(){
+ analogWrite(speedPMPin, ws.speedPM);
+ digitalWrite(speedDirPin, ws.speedDir);
+}
+
+void increaseSpeedPM(){
+  ws.speedPM = ws.speedPM *2;
+  if (ws.speedPM > 255)
+    ws.speedPM = 255;
+}
+
+void decreaseSpeedPM(){
+  ws.speedPM = ws.speedPM / 2;
+  if (ws.speedPM < .10 * 255)
+    ws.speedPM = 0; 
 }
 
 void toggle_gun() {
