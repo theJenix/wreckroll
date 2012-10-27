@@ -3,6 +3,7 @@ package org.gitmad.wreckroll;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Date;
@@ -14,6 +15,7 @@ import org.gitmad.wreckroll.canvas.OnDrawListener;
 import org.gitmad.wreckroll.canvas.OnTouchPointListener;
 import org.gitmad.wreckroll.canvas.TouchPoint;
 import org.gitmad.wreckroll.canvas.TypewriterTextWriter;
+import org.gitmad.wreckroll.client.BufferedClient;
 import org.gitmad.wreckroll.client.DebugClient;
 import org.gitmad.wreckroll.client.WreckClient;
 import org.gitmad.wreckroll.util.CountdownTimer;
@@ -41,7 +43,7 @@ public class WreckRollActivity extends Activity {
 
     private static final int FREEZE_FRAME_TIME_MS = 1000;
     
-    private final String REGISTRAR_ADDRESS = "localhost";
+    private final String REGISTRAR_ADDRESS = "192.168.1.250";
 
     protected static final int MAX_DETECTED_FACES = 1;
 
@@ -358,11 +360,20 @@ public class WreckRollActivity extends Activity {
     		connection = (HttpURLConnection)url.openConnection();
     		connection.setDoOutput(false);
     		connection.setRequestMethod("GET");
+    		connection.setConnectTimeout(10);
     		connection.connect();
     		if (connection.getResponseCode() == 404){
     			return null;
     		}
-    		return connection.getResponseMessage();
+
+    		char [] buf = new char[512];
+    		InputStreamReader is = new InputStreamReader(connection.getInputStream());
+    		int read = 0;
+    		StringBuilder builder = new StringBuilder();
+    		while ((read = is.read(buf)) >= 0) {
+    		    builder.append(buf, 0, read);
+    		}
+    		return builder.toString();
     	} catch(IOException ex){
     		return null;
     	}
@@ -393,11 +404,11 @@ public class WreckRollActivity extends Activity {
         this.cameraCaptureTask.execute();
         
         try {
-            this.client = new DebugClient(); // DirectArduinoClient();
+            this.client = new BufferedClient(new DebugClient()); // DirectArduinoClient();
             ///TODO: connect to registrar
             String ipRelay   = getRelayIP();
             short  relayPort = 6696;
-//            this.client = new RelayClient(ipRelay, relayPort);
+//            this.client = new BufferedClient(new RelayClient(ipRelay, relayPort));
         } catch (Exception e) {
             e.printStackTrace();
             throw new RuntimeException(e);

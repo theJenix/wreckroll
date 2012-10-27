@@ -34,6 +34,7 @@ public class SpyHardProcessor implements ImageProcessor {
         System.out.println("Found " + found + " faces.");
         
         if (found > 0) {
+            System.out.println("Confidence: " + faces[0].confidence());
             Bitmap annotated = annotateFaces(bmp565, faces, found);
             Bitmap old = bitmap;
             bitmap = annotated.copy(bitmap.getConfig(), bitmap.isMutable());
