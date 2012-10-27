@@ -7,6 +7,7 @@
 //#include <dataflash.h>
 #include "registrar.h"
 #include "wreckroll.h"
+#include "debug.h"
 
 #define WIRELESS_MODE_INFRA    1
 #define WIRELESS_MODE_ADHOC    2
@@ -14,9 +15,10 @@
 #define FLASH_SLAVE_SELECT 7
 #define WIFI_SLAVE_SELECT  10
 
+
 // WreckRoll configuration parameters ------------------------------------------
 
-unsigned char registrar_ip[]    = {192,168,1,2};	// IP address of WiShield
+//unsigned char registrar_ip[]    = {192,168,1,2};	// IP address of WiShield
 
 unsigned short port = 9000;
 
@@ -80,6 +82,9 @@ struct wreck_state {
   byte    canopy_motion_left;
   boolean canopy_state; 
   
+  int speedPM;
+  int speedDir;
+  
 };
 
 wreck_state ws = {0};
@@ -87,6 +92,14 @@ wreck_state ws = {0};
 void debug(char *msg) {
   Serial.println(msg);
 }
+
+// PINS
+int speedDirDigPin = 1;
+int speedAnalPin = 1;
+int turnDigPin = 2;
+int turnAnalPin = 2;
+int gunDigPin = 3;
+int gunAnalPin = 3;
 
 void setup()
 {
@@ -100,6 +113,9 @@ void setup()
 //    Serial.println("NO WAY!");
 //  }
 //  WiServer.enableVerboseMode(true);
+
+ws.speedPM = 0;
+ws.speedDir = 0;
 }
 
 //POSTrequest registerIp(registrar_ip, 8000, "192.168.1.134", "/ardi", NULL);
@@ -162,6 +178,7 @@ void update_state(char command) {
   switch(command & ~0x20) { //always uppercase
     case 'F': //forward
       if (ws.movement == 'R') {
+        ws.movement = 'S';
         //TODO: status message back to caller
         break;
       }
@@ -170,6 +187,7 @@ void update_state(char command) {
       break;
     case 'V': //reverse
       if (ws.movement == 'F') {
+        ws.movement = 'S';
         //TODO: status message back to caller
         break;
       }
@@ -216,7 +234,7 @@ void turn_wreck() {
   if (ws.turn_left > 0) {
     Serial.print("Turning the wreck ");
     Serial.println(ws.turn == 'L' ? "left" : "right");
-      
+     
     int blinkSpeed = ws.movement == 'L' ? 750 : 1500;
     doBlink(FLASH_SLAVE_SELECT, blinkSpeed);
     ws.movement_left--;
@@ -228,16 +246,35 @@ void move_wreck() {
     if (ws.movement != 'S') {
       Serial.print("Moving the wreck ");
       Serial.println(ws.movement == 'F' ? "forward" : "backward");
-      
-      int blinkSpeed = ws.movement == 'F' ? 1000 : 2000;
-      doBlink(FLASH_SLAVE_SELECT, blinkSpeed);
+      analogWrite(speedAnalPin, speedPM);
+      digitalWrite(speedDirDigPin, speedDir);
+      //int blinkSpeed = ws.movement == 'F' ? 1000 : 2000;
+      //doBlink(FLASH_SLAVE_SELECT, blinkSpeed);
     } else {
       Serial.println("Stopping the wreck");
       doBlink(FLASH_SLAVE_SELECT, 500);
       doBlink(FLASH_SLAVE_SELECT, 500);
     }      
     ws.movement_left--;
+  } else { //need to move the wreck, but no movements are left, so no command was given
+    ws.speedPM = ws.speedPM/2;
+    if (ws.speedPM < .1 * 255)
+      ws.speedPM = 0;
+    
   }
+}
+
+void increaseSpeedPM(){
+  ws.speedPM = ws.speedPM*2;
+  if (ws.speedPM > 255)
+      ws.speedPM = 255;
+}
+
+void decreaseSpeedPM(){
+  ws.speedPM = ws.speedPM/2;
+  if (ws.speedPM < .1 * 255)
+    ws.speedPM = 0;
+  
 }
 
 void toggle_gun() {

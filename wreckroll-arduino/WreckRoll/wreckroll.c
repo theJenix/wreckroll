@@ -48,6 +48,7 @@
 #include <string.h>
 #include "wreckroll.h"
 #include "registrar.h"
+#include "debug.h"
 
 extern unsigned short port;
 
