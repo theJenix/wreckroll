@@ -17,7 +17,7 @@
 
 // WreckRoll configuration parameters ------------------------------------------
 
-unsigned char registrar_ip[]    = {192,168,1,112};	// IP address of WiShield
+unsigned char registrar_ip[]    = {192,168,1,250};	// IP address of WiShield
 short registrar_port = 8001;
 
 unsigned short port = 9000;
@@ -85,7 +85,20 @@ struct wreck_state {
   byte    canopy_motion_left;
   boolean canopy_state; 
   
+  int speedPM;
+  int speedDir;
+  
+  int turnPM;
+  int turnDir;
 };
+
+// Pins
+int speedDirPin    = 1;
+int speedPMPin     = 1;
+int turnDirPin     = 2;
+int turnPMPin      = 2;
+int rightSensorPin = 3;
+int leftSensorPin  = 4;
 
 wreck_state ws = {0};
 
@@ -105,6 +118,10 @@ void setup()
 //    Serial.println("NO WAY!");
 //  }
 //  WiServer.enableVerboseMode(true);
+  ws.speedPM = 0;
+  ws.speedDir = 0;
+  ws.turnPM = 0;
+  ws.turnDir = 0;
 }
 
 //POSTrequest registerIp(registrar_ip, 8000, "192.168.1.134", "/ardi", NULL);
@@ -129,6 +146,8 @@ void loop()
   
 
   if (get_run_state() == STATE_RUNNING) {
+//    Serial.print("State iis Running");
+
     //advance any movement/actions that are held in the state.  this will be influenced
     // by commands received over the socket
     turn_wreck();
@@ -173,17 +192,27 @@ void handle_command(char *inputbuffer)
 }
 
 void update_state(char command) {
+  char buffer[50];
+  Serial.println("in update state");
+  sprintf(buffer, "in update status, command: %c", command);
+  Serial.println(buffer);
   switch(command & ~0x20) { //always uppercase
     case 'F': //forward
       if (ws.movement == 'R') {
+        ws.movement = 'S';
+        ws.movement_left = CAR_MOTION_MS;
         //TODO: status message back to caller
         break;
       }
       ws.movement = 'F';
       ws.movement_left = CAR_MOTION_MS;
+      sprintf(buffer, " in forward, with movement left: %d", ws.movement_left);
+      Serial.println(buffer);
       break;
     case 'V': //reverse
       if (ws.movement == 'F') {
+        ws.movement = 'S';
+        ws.movement_left = CAR_MOTION_MS;
         //TODO: status message back to caller
         break;
       }
@@ -223,6 +252,8 @@ void update_state(char command) {
         ws.canopy_motion_left = CANOPY_MOTION_STEPS;
       }
       break;
+     default:
+       break;
   }
 }
 
@@ -230,7 +261,22 @@ void turn_wreck() {
   if (ws.turn_left > 0) {
     Serial.print("Turning the wreck ");
     Serial.println(ws.turn == 'L' ? "left" : "right");
-      
+    if (ws.turn == 'L' && digitalRead(leftSensorPin) == LOW){
+      ws.turnPM = 255;
+    } else if (ws.turn == 'L'){
+      ws.turnPM = 0;
+    } else if (ws.turn == 'R' && digitalRead(rightSensorPin) == LOW){
+      ws.turnPM = 255;
+    } else {
+      ws.turnPM = 0;
+    }
+    
+    ws.turnDir = ws.turn =='L'? 'L' : 'R';
+    
+    analogWrite(turnPMPin, ws.turnPM);
+    digitalWrite(turnDirPin, ws.turnDir);
+    
+    
     int blinkSpeed = ws.movement == 'L' ? 750 : 1500;
     doBlink(FLASH_SLAVE_SELECT, blinkSpeed);
     ws.turn_left -= ws.elapsed_time;
@@ -238,20 +284,53 @@ void turn_wreck() {
 }
 //NOTE: includes "stop"
 void move_wreck() {
+  Serial.print("movement left OLD:");
+  char buffer[50];
+  sprintf(buffer, "%d", ws.movement_left);
+  Serial.println(buffer); 
   if (ws.movement_left > 0) {
     if (ws.movement != 'S') {
       Serial.print("Moving the wreck ");
       Serial.println(ws.movement == 'F' ? "forward" : "backward");
-      
+      if (ws.movement == 'F')
+        ws.speedDir = HIGH;
+      else 
+        ws.speedDir = LOW;
+      increaseSpeedPM();
       int blinkSpeed = ws.movement == 'F' ? 1000 : 2000;
       doBlink(FLASH_SLAVE_SELECT, blinkSpeed);
     } else {
+      decreaseSpeedPM();
       Serial.println("Stopping the wreck");
       doBlink(FLASH_SLAVE_SELECT, 500);
       doBlink(FLASH_SLAVE_SELECT, 500);
     }      
     ws.movement_left -= ws.elapsed_time;
+  } else {
+    if (ws.speedPM > 0)
+     Serial.print("In moving, no movement left");
+    decreaseSpeedPM();
   }
+  updateToPins();
+  delay(3000);
+
+}
+
+void updateToPins(){
+ analogWrite(speedPMPin, ws.speedPM);
+ digitalWrite(speedDirPin, ws.speedDir);
+}
+
+void increaseSpeedPM(){
+  ws.speedPM = (ws.speedPM+1) *2;
+  if (ws.speedPM > 255)
+    ws.speedPM = 255;
+}
+
+void decreaseSpeedPM(){
+  ws.speedPM = ws.speedPM / 2;
+  if (ws.speedPM < .10 * 255)
+    ws.speedPM = 0; 
 }
 
 void toggle_gun() {
