@@ -261,18 +261,24 @@ void move_wreck() {
     if (ws.movement != 'S') {
       Serial.print("Moving the wreck ");
       Serial.println(ws.movement == 'F' ? "forward" : "backward");
-      
+      if (ws.movement == 'F')
+        ws.speedDir = HIGH;
+      else 
+        ws.speedDir = LOW;
+      increaseSpeedPM();
       int blinkSpeed = ws.movement == 'F' ? 1000 : 2000;
       doBlink(FLASH_SLAVE_SELECT, blinkSpeed);
     } else {
+      decreaseSpeedPM();
       Serial.println("Stopping the wreck");
       doBlink(FLASH_SLAVE_SELECT, 500);
       doBlink(FLASH_SLAVE_SELECT, 500);
     }      
     ws.movement_left -= ws.elapsed_time;
   } else {
-      decreaseSpeedPM(); 
+    decreaseSpeedPM();
   }
+  updateToPins();
 }
 
 void updateToPins(){
@@ -281,7 +287,7 @@ void updateToPins(){
 }
 
 void increaseSpeedPM(){
-  ws.speedPM = ws.speedPM *2;
+  ws.speedPM = (ws.speedPM+1) *2;
   if (ws.speedPM > 255)
     ws.speedPM = 255;
 }
