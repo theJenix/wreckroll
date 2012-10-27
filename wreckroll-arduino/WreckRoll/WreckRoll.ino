@@ -17,7 +17,7 @@
 
 // WreckRoll configuration parameters ------------------------------------------
 
-unsigned char registrar_ip[]    = {192,168,1,112};	// IP address of WiShield
+unsigned char registrar_ip[]    = {192,168,1,250};	// IP address of WiShield
 short registrar_port = 8001;
 
 unsigned short port = 9000;
@@ -57,8 +57,8 @@ unsigned char security_passphrase_len;
 #define SUBSYS_STOWED 0
 #define SUBSYS_DEPLOYED 1
 
-#define CAR_MOTION_MS    200
-#define CAR_STOP_MS      200
+#define CAR_MOTION_MS    2000
+#define CAR_STOP_MS      300
 #define CAR_TURN_MS      200
 #define GUN_MOTION_MS    200
 #define SMOKE_MOTION_MS  200
@@ -69,11 +69,11 @@ unsigned char security_passphrase_len;
 struct wreck_state {
   unsigned long last_time;
   unsigned long elapsed_time;
-  
-  char movement_left;
+
+  short movement_left;
   char movement;
   
-  char turn_left;
+  short turn_left;
   char turn;
  
   byte    gun_motion_left;
@@ -93,8 +93,8 @@ struct wreck_state {
 };
 
 // Pins
-int speedDirPin = 1;
-int speedPMPin = 1;
+int speedDirPin = 12;
+int speedPMPin = 10;
 
 
 wreck_state ws = {0};
@@ -109,6 +109,7 @@ void setup()
   set_command_handler(handle_command);
   ws.speedPM = 0;
   ws.speedDir = 0;
+  updateToPins();
 }
 
 int loop_cnt = 0;
@@ -128,6 +129,10 @@ void loop()
   }
 
   if (get_run_state() == STATE_RUNNING) {
+    if (loop_cnt == 1) {
+      Serial.println("We're running");
+      loop_cnt = 2;
+    }
     //advance any movement/actions that are held in the state.  this will be influenced
     // by commands received over the socket
     if (ws.emergency_stop) {
@@ -139,7 +144,8 @@ void loop()
     toggle_smoke();
     toggle_canopy();
   }
-  
+  updateToPins();
+
   //use the time captured above..that means that an operation that takes 200ms will account for time performing the operation
   ws.last_time = this_time;
 
@@ -158,6 +164,10 @@ void initShield()
   pinMode(WIFI_SLAVE_SELECT, OUTPUT);
   digitalWrite(WIFI_SLAVE_SELECT, HIGH);
 
+  pinMode(speedDirPin, OUTPUT);
+  pinMode(speedPMPin, OUTPUT);
+  analogWrite(speedPMPin, 0);
+  
   // now init dataflash
 //  dflash.init(FLASH_SLAVE_SELECT);
 
@@ -175,6 +185,10 @@ void handle_command(char *inputbuffer)
 }
 
 void update_state(char command) {
+  Serial.print("Incoming command: ");
+  char buf[2];
+  sprintf(buf, "%c", command);
+  Serial.println(buf);
   switch(command & ~0x20) { //always uppercase
     case 'F': //forward
       if (ws.movement == 'R') {
@@ -215,19 +229,19 @@ void update_state(char command) {
     case 'G': //toggle gun
       if (ws.gun_motion_left == 0) {
         ws.gun_state       = !ws.gun_state;
-        ws.gun_motion_left = GUN_MOTION_STEPS;
+        ws.gun_motion_left = GUN_MOTION_MS;
       }
       break;
     case 'M': //toggle smoke
       if (ws.smoke_motion_left == 0) {
         ws.smoke_state       = !ws.smoke_state;
-        ws.smoke_motion_left = SMOKE_MOTION_STEPS;
+        ws.smoke_motion_left = SMOKE_MOTION_MS;
       }
       break;
     case 'E': //toggle ejector/canopy
       if (ws.canopy_state == 0) {
         ws.canopy_state       = !ws.canopy_state;
-        ws.canopy_motion_left = CANOPY_MOTION_STEPS;
+        ws.canopy_motion_left = CANOPY_MOTION_MS;
       }
       break;
     case 'X': //emergency stop
@@ -240,8 +254,7 @@ void all_stop() {
    if (ws.emergency_stop && ws.speedPM > 0) {
      ws.speedPM  = 0;
      ws.speedDir = ws.speedDir == LOW ? HIGH : LOW;
-     analogWrite(analOut1,  ws.speedPM);
-     digitalWrite(digiOut1, ws.speedDir);
+     updateToPins();
    } 
 }
 
@@ -257,45 +270,61 @@ void turn_wreck() {
 }
 //NOTE: includes "stop"
 void move_wreck() {
+  boolean changed = false;
   if (ws.movement_left > 0) {
     if (ws.movement != 'S') {
       Serial.print("Moving the wreck ");
       Serial.println(ws.movement == 'F' ? "forward" : "backward");
       if (ws.movement == 'F')
-        ws.speedDir = HIGH;
-      else 
         ws.speedDir = LOW;
+      else 
+        ws.speedDir = HIGH;
       increaseSpeedPM();
-      int blinkSpeed = ws.movement == 'F' ? 1000 : 2000;
-      doBlink(FLASH_SLAVE_SELECT, blinkSpeed);
+      changed = true;
+//      int blinkSpeed = ws.movement == 'F' ? 1000 : 2000;
+//      doBlink(FLASH_SLAVE_SELECT, blinkSpeed);
     } else {
+      changed = true;
       decreaseSpeedPM();
       Serial.println("Stopping the wreck");
-      doBlink(FLASH_SLAVE_SELECT, 500);
-      doBlink(FLASH_SLAVE_SELECT, 500);
+//      doBlink(FLASH_SLAVE_SELECT, 500);
+//      doBlink(FLASH_SLAVE_SELECT, 500);
     }      
     ws.movement_left -= ws.elapsed_time;
   } else {
-    decreaseSpeedPM();
+    if (ws.speedPM > 0) {
+      changed = true;
+      ws.movement = 'S';
+      ws.movement_left = CAR_STOP_MS;
+    }
+//    decreaseSpeedPM();
   }
   updateToPins();
 }
 
+int change = 0;
 void updateToPins(){
- analogWrite(speedPMPin, ws.speedPM);
- digitalWrite(speedDirPin, ws.speedDir);
+  
+  char buf[32];
+  sprintf(buf, "%d, %d", ws.speedPM, ws.speedDir);
+  //Serial.println(buf);
+  digitalWrite(speedDirPin, ws.speedDir);
+//  delay(200);
+  analogWrite(speedPMPin, ws.speedPM);
 }
 
 void increaseSpeedPM(){
-  ws.speedPM = (ws.speedPM+1) *2;
-  if (ws.speedPM > 255)
-    ws.speedPM = 255;
+  ws.speedPM = 255;
+//  ws.speedPM = (ws.speedPM+1) *2;
+//  if (ws.speedPM > 255)
+//    ws.speedPM = 255;
 }
 
 void decreaseSpeedPM(){
-  ws.speedPM = ws.speedPM / 2;
-  if (ws.speedPM < .10 * 255)
-    ws.speedPM = 0; 
+  ws.speedPM = 0;
+//  ws.speedPM = (int)ws.speedPM * ((float)ws.movement_left / CAR_STOP_MS);
+//  if (ws.speedPM < .10 * 255)
+//    ws.speedPM = 0; 
 }
 
 void toggle_gun() {

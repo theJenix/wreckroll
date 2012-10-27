@@ -110,7 +110,7 @@ void socket_app_init(void)
  */
 void socket_app_appcall(void)
 {
-  debug("in socket_app_appcall");
+ // debug("in socket_app_appcall");
   
   //check to see if we're working with the registrar
   unsigned char handled = s_handler != NULL ? s_handler() : 0;
@@ -130,7 +130,7 @@ void socket_app_appcall(void)
      * the protosocket in our applications' state structure.
      */
     if(uip_connected()) {
-      debug("Handling connection");
+      debug("Establishing connection");
       PSOCK_INIT(&s->p, s->inputbuffer, sizeof(s->inputbuffer));
     }
   
@@ -173,9 +173,9 @@ unsigned char check_if_registrar() {
 //    return;
 //  }
 
-char buf[32];
-sprintf(buf, "%X", uip_flags);
-debug(buf);
+//char buf[32];
+//sprintf(buf, "%X", uip_flags);
+//debug(buf);
 //  if (uip_acked()) {
 //    return; //nothing to do
 //  }
