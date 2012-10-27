@@ -17,4 +17,6 @@ public interface WreckClient {
     public void toggleSmoke();
     
     public void toggleCanopy();
+    
+    public void emergencyStop();
 }

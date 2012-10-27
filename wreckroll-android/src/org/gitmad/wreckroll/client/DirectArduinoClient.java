@@ -56,4 +56,7 @@ public class DirectArduinoClient implements WreckClient {
         this.out.println("E");
     }
 
+    public void emergencyStop() {
+        this.out.println("X");
+    }
 }

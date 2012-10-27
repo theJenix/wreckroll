@@ -13,6 +13,8 @@ public class RelayClient implements WreckClient {
     private int retries;
     private URL url;
 
+    private long emergencyStopLastTap = 0;
+    
     public RelayClient(String ipAddress, int port) throws IOException {
         this.url = new URL("http://" + ipAddress + ":" + port);
         this.retries = 0;
@@ -72,5 +74,13 @@ public class RelayClient implements WreckClient {
    
     public void toggleCanopy() {
      	sendCommand("canopy");
+    }
+
+    public void emergencyStop() {
+        long currentTimeMillis = System.currentTimeMillis();
+        if (emergencyStopLastTap != 0 && currentTimeMillis - emergencyStopLastTap < 50) {
+            sendCommand("emergency");
+        }
+        emergencyStopLastTap = currentTimeMillis;
     }
 }

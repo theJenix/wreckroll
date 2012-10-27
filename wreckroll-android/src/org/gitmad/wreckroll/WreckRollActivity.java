@@ -14,6 +14,7 @@ import org.gitmad.wreckroll.canvas.OnDrawListener;
 import org.gitmad.wreckroll.canvas.OnTouchPointListener;
 import org.gitmad.wreckroll.canvas.TouchPoint;
 import org.gitmad.wreckroll.canvas.TypewriterTextWriter;
+import org.gitmad.wreckroll.client.DebugClient;
 import org.gitmad.wreckroll.client.WreckClient;
 import org.gitmad.wreckroll.util.CountdownTimer;
 import org.gitmad.wreckroll.video.CameraCaptureAsyncTask;
@@ -39,7 +40,7 @@ public class WreckRollActivity extends Activity {
 
     private static final int FREEZE_FRAME_TIME_MS = 1000;
     
-    private final String REGISTRAR_ADDRESS = "192.168.1.150";
+    private final String REGISTRAR_ADDRESS = "localhost";
 
     protected static final int MAX_DETECTED_FACES = 1;
 
@@ -52,6 +53,7 @@ public class WreckRollActivity extends Activity {
     public WreckRollActivity() {
     }
     
+    boolean blah = false;
     /** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -107,7 +109,7 @@ public class WreckRollActivity extends Activity {
         int spacing = usableHeight / 5;
         int radius  = usableHeight / 10;
 
-        Circle circle = new Circle(radius, radius, radius, Color.GREEN);
+        Circle circle = new Circle(3*radius, usableHeight / 2, 3*radius, Color.LTGRAY);
         board.addTouchPoint(circle);
         
         circle.setOnTouchListener(new OnTouchPointListener() {
@@ -116,61 +118,61 @@ public class WreckRollActivity extends Activity {
             }
 
             public void touchPerformed(TouchPoint point, float x, float y) {
-                client.forward();
+                processMovement((Circle) point, x, y);
             }
         });
         
-        circle = new Circle(radius, 3 * radius, radius, Color.RED);
-        board.addTouchPoint(circle);
-        
-        circle.setOnTouchListener(new OnTouchPointListener() {
-            public boolean isSupportedAction(int action) {
-                return action != MotionEvent.ACTION_UP;
-            }
-
-            public void touchPerformed(TouchPoint point, float x, float y) {
-                client.stop();
-            }
-        });
-        
-        circle = new Circle(radius, 5 * radius, radius, Color.CYAN);
-        board.addTouchPoint(circle);
-        
-        circle.setOnTouchListener(new OnTouchPointListener() {
-            public boolean isSupportedAction(int action) {
-                return action != MotionEvent.ACTION_UP;
-            }
-
-            public void touchPerformed(TouchPoint point, float x, float y) {
-                client.left();
-            }
-        });
-        
-        circle = new Circle(radius, 7 * radius, radius, Color.BLUE);
-        board.addTouchPoint(circle);
-        
-        circle.setOnTouchListener(new OnTouchPointListener() {
-            public boolean isSupportedAction(int action) {
-                return action != MotionEvent.ACTION_UP;
-            }
-
-            public void touchPerformed(TouchPoint point, float x, float y) {
-                client.right();
-            }
-        });
-        
-        circle = new Circle(radius, 9 * radius, radius, Color.YELLOW);
-        board.addTouchPoint(circle);
-        
-        circle.setOnTouchListener(new OnTouchPointListener() {
-            public boolean isSupportedAction(int action) {
-                return action != MotionEvent.ACTION_UP;
-            }
-
-            public void touchPerformed(TouchPoint point, float x, float y) {
-                client.reverse();
-            }
-        });
+//        circle = new Circle(radius, 3 * radius, radius, Color.RED);
+//        board.addTouchPoint(circle);
+//        
+//        circle.setOnTouchListener(new OnTouchPointListener() {
+//            public boolean isSupportedAction(int action) {
+//                return action != MotionEvent.ACTION_UP;
+//            }
+//
+//            public void touchPerformed(TouchPoint point, float x, float y) {
+//                client.stop();
+//            }
+//        });
+//        
+//        circle = new Circle(radius, 5 * radius, radius, Color.CYAN);
+//        board.addTouchPoint(circle);
+//        
+//        circle.setOnTouchListener(new OnTouchPointListener() {
+//            public boolean isSupportedAction(int action) {
+//                return action != MotionEvent.ACTION_UP;
+//            }
+//
+//            public void touchPerformed(TouchPoint point, float x, float y) {
+//                client.left();
+//            }
+//        });
+//        
+//        circle = new Circle(radius, 7 * radius, radius, Color.BLUE);
+//        board.addTouchPoint(circle);
+//        
+//        circle.setOnTouchListener(new OnTouchPointListener() {
+//            public boolean isSupportedAction(int action) {
+//                return action != MotionEvent.ACTION_UP;
+//            }
+//
+//            public void touchPerformed(TouchPoint point, float x, float y) {
+//                client.right();
+//            }
+//        });
+//        
+//        circle = new Circle(radius, 9 * radius, radius, Color.YELLOW);
+//        board.addTouchPoint(circle);
+//        
+//        circle.setOnTouchListener(new OnTouchPointListener() {
+//            public boolean isSupportedAction(int action) {
+//                return action != MotionEvent.ACTION_UP;
+//            }
+//
+//            public void touchPerformed(TouchPoint point, float x, float y) {
+//                client.reverse();
+//            }
+//        });
 //
 //
 //        //draw the buttons as touchpoint controls
@@ -193,7 +195,7 @@ public class WreckRollActivity extends Activity {
 //        int radius = usableHeight / 8;
 
         radius = usableHeight / 8; //4 buttons
-        Circle smokeButton = new Circle(metrics.widthPixels - radius, radius, radius, Color.RED);
+        Circle smokeButton = new Circle(metrics.widthPixels - radius, radius, radius, Color.YELLOW);
         board.addTouchPoint(smokeButton);
         smokeButton.setOnTouchListener(new OnTouchPointListener() {
             public boolean isSupportedAction(int action) {
@@ -205,7 +207,7 @@ public class WreckRollActivity extends Activity {
             }
         });
         
-        Circle gunButton       = new Circle(metrics.widthPixels - radius, 3 * radius, radius, Color.RED);
+        Circle gunButton       = new Circle(metrics.widthPixels - radius, 3 * radius, radius, Color.YELLOW);
         board.addTouchPoint(gunButton);
         gunButton.setOnTouchListener(new OnTouchPointListener() {
             public boolean isSupportedAction(int action) {
@@ -217,7 +219,7 @@ public class WreckRollActivity extends Activity {
             }
         });
 
-        Circle canopyButton    = new Circle(metrics.widthPixels - radius, 5 * radius, radius, Color.RED);
+        Circle canopyButton    = new Circle(metrics.widthPixels - radius, 5 * radius, radius, Color.YELLOW);
         board.addTouchPoint(canopyButton);
         canopyButton.setOnTouchListener(new OnTouchPointListener() {
             
@@ -230,9 +232,22 @@ public class WreckRollActivity extends Activity {
             }
         });
 
+        Circle emergencyStopButton    = new Circle(metrics.widthPixels - radius, 7 * radius, radius, Color.RED);
+        board.addTouchPoint(emergencyStopButton);
+        emergencyStopButton.setOnTouchListener(new OnTouchPointListener() {
+            
+            public boolean isSupportedAction(int action) {
+                return action == MotionEvent.ACTION_DOWN;
+            }
+
+            public void touchPerformed(TouchPoint point, float x, float y) {
+                client.emergencyStop();
+            }
+        });
+
         Bitmap bitmap = BitmapFactory.decodeResource(this.getResources(), R.drawable.camera);
         bitmap = Bitmap.createScaledBitmap(bitmap, bitmap.getWidth()/2, bitmap.getHeight()/2, false);
-        Image snapShotButton = new Image(bitmap, metrics.widthPixels - radius, 7 * radius);
+        Image snapShotButton = new Image(bitmap, metrics.widthPixels/2, 7 * radius);
         board.addTouchPoint(snapShotButton);
         snapShotButton.setOnTouchListener(new OnTouchPointListener() {
 
@@ -250,7 +265,32 @@ public class WreckRollActivity extends Activity {
     }
     
     protected String generateRandomSpyMessage() {
-        return "I am the very model of a modern major general\nInformation, vegetable,\n animal or mineral";
+        String [] openings    = {"**** CLASSIFIED ****", "FOUO: For official use only", "TOP SECRET", "FOR YOUR EYES ONLY", "SITREP: All Agents Bulletin", "MEMO RE: Intelligence"};
+        String [] lastNames   = {"Burdell", "Peace", "Stallworth", "Hood", "Smith", "Cash", "Jenkins", "Jones", "Elmalem", "Rosalia", "Vorah", "Dekel", "Wang", "Johnson", "Borg", "Dijkstra", "Fischer", "Williams", "Powers", "Doe", "Zoidberg"};
+        String [] countries   = {"USA", "UK", "Russia", "Ukraine", "Israel", "Canada", "France", "Germany", "China"};
+        String [] specialties = {"Hacking", "Cracking", "Diplomancy", "Computers", "Espionage", "Electronics", "Surveillance", "Interrogation", "Weapons", "Disguises", "Forgery"};
+        
+        int one   = (int) (Math.random() * openings.length);
+        int two   = (int) (Math.random() * lastNames.length);
+        int three = (int) (Math.random() * 26);
+        int four  = (int) (Math.random() * countries.length);
+        int five  = (int) (Math.random() * specialties.length);
+        int six;
+        do {
+            six   = (int) (Math.random() * specialties.length);
+        } while(six == five);
+        
+
+        String lastName     = lastNames[two];
+        String firstInitial = lastName.equals("Peace") ? "T" :
+                              lastName.equals("Stallworth") ? "C" :
+                              lastName.equals("Burdell") ? "G" :
+                              lastName.equals("Doe") ? "J" :
+                              lastName.equals("Dijkstra") ? "E" :
+                                  String.valueOf((char)(0x41 + three));
+        String str = String.format("%s\n%s. %s\nAllegience: %s\nSpecialties: %s, %s",
+                                    openings[one].toUpperCase(), firstInitial, lastName, countries[four], specialties[five], specialties[six]);
+        return str;
     }
 
     protected void saveImage(Bitmap backgroundImage) {
