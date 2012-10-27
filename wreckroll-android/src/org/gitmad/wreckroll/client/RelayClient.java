@@ -53,7 +53,7 @@ public class RelayClient implements WreckClient {
     }
     
     public void reverse() {
-    	sendCommand("referse");
+    	sendCommand("reverse");
     }
     
     public void left() {

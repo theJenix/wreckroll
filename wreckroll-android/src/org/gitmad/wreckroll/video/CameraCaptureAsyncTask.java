@@ -115,7 +115,7 @@ public class CameraCaptureAsyncTask extends AsyncTask {
         //TODO: may have to double buffer the bitmaps
         BitmapFactory.Options opts = new BitmapFactory.Options();
         opts.inSampleSize = 2;
-        Bitmap old = this.currentImage.getBitmap();
+        Bitmap old = this.currentImage != null ? this.currentImage.getBitmap() : null;
         Bitmap newBitmap = BitmapFactory.decodeByteArray(buf, id.start, id.length, opts);
         
         Map<String, String> attributes = new HashMap<String, String>();
@@ -123,9 +123,9 @@ public class CameraCaptureAsyncTask extends AsyncTask {
             newBitmap = processor.process(newBitmap, attributes);
         }
         this.currentImage = new CapturedImage(newBitmap, attributes);
-        if (old != null) {
-            old.recycle();
-        }
+//        if (old != null) {
+//            old.recycle();
+//        }
     }
     
     //NOTE: BEWARE: thar be dragons ahead (hackathon quality code, watch your step)

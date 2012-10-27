@@ -18,6 +18,7 @@ public class CapturedImage {
         return bitmap;
     }
     public String getAttribute(String attribute) {
-        return attributes.get(attribute);
+        //never return null
+        return attributes.containsKey(attribute) ? attributes.get(attribute) : "";
     }
 }

@@ -7,7 +7,7 @@ import android.graphics.Paint;
 public class TypewriterTextWriter implements TextWriter {
 
     private static final int LINE_HEIGHT = 20; //TODO: dynamically figure this out?
-    private static final int TIMER_WRITE_COUNT = 1;
+    private static final int TIMER_WRITE_COUNT = 6;
     private String message;
     private boolean animating;
     private int messageIndex;
@@ -63,7 +63,7 @@ public class TypewriterTextWriter implements TextWriter {
             } else {
                 paint.setAlpha(this.alpha);
                 
-                this.alpha = Math.max(this.alpha - 1, 0);
+                this.alpha = Math.max(this.alpha - 5, 0);
     
                 writeToIndex(canvas, this.message.length(), paint);
             }

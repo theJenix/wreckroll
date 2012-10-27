@@ -18,6 +18,7 @@ import org.gitmad.wreckroll.client.DebugClient;
 import org.gitmad.wreckroll.client.WreckClient;
 import org.gitmad.wreckroll.util.CountdownTimer;
 import org.gitmad.wreckroll.video.CameraCaptureAsyncTask;
+import org.gitmad.wreckroll.video.CapturedImage;
 import org.gitmad.wreckroll.video.SpyHardProcessor;
 
 import android.app.Activity;
@@ -85,20 +86,28 @@ public class WreckRollActivity extends Activity {
         board.setOnDrawListener(new OnDrawListener() {
 
             public void onPreDraw() {
-//                if (!WreckRollActivity.this.freezeFrameTimer.poll() || board.isWritingMessage()) {
-//                    CapturedImage image = cameraCaptureTask.getCurrentImage();
-//                    //set the latest bitmap captured from the camera
-//                    board.setBackgroundImage(image.getBitmap());
-//                    if (image.getAttribute(SpyHardProcessor.ATTR_FACE_FOUND).equals("true")) {
-//                        board.setMessage(generateRandomSpyMessage());
-//                    }
-//                }
-                if (!board.isWritingMessage()) {
-                    String newMessage = generateRandomSpyMessage();
-                    //TODO: this would make more sense if we could specify a max width...but for now, we're ok
-                    //NOTE: 108 is kind of arbitrary...we may need to adjust with different text
-                    board.setMessage(new TypewriterTextWriter(newMessage, usableWidth / 2 - 108, usableHeight - 100));
+                if (!WreckRollActivity.this.freezeFrameTimer.poll() && !board.isWritingMessage()) {
+                    CapturedImage image = cameraCaptureTask.getCurrentImage();
+                    if (image != null) {
+                        //set the latest bitmap captured from the camera
+                        board.setBackgroundImage(image.getBitmap());
+                        if (image.getAttribute(SpyHardProcessor.ATTR_FACE_FOUND).equals("true")) {
+                            String newMessage = generateRandomSpyMessage();
+                            // TODO: this would make more sense if we could specify
+                            // a max width...but for now, we're ok
+                            // NOTE: 108 is kind of arbitrary...we may need to
+                            // adjust with different text
+                            board.setMessage(new TypewriterTextWriter(newMessage,
+                                    usableWidth / 2 - 108, usableHeight - 100));
+                        }
+                    }
                 }
+//                if (!board.isWritingMessage()) {
+//                    String newMessage = generateRandomSpyMessage();
+//                    //TODO: this would make more sense if we could specify a max width...but for now, we're ok
+//                    //NOTE: 108 is kind of arbitrary...we may need to adjust with different text
+//                    board.setMessage(new TypewriterTextWriter(newMessage, usableWidth / 2 - 108, usableHeight - 100));
+//                }
             }
 
             public void onPostDraw() {
@@ -394,8 +403,8 @@ public class WreckRollActivity extends Activity {
             throw new RuntimeException(e);
         }
         
-        this.steeringWheel = new SteeringWheel(this.client);
-        mSensorManager.registerListener(this.steeringWheel, mSensor, SensorManager.SENSOR_DELAY_NORMAL);
+//        this.steeringWheel = new SteeringWheel(this.client);
+//        mSensorManager.registerListener(this.steeringWheel, mSensor, SensorManager.SENSOR_DELAY_NORMAL);
         
     }
     
@@ -403,7 +412,7 @@ public class WreckRollActivity extends Activity {
     protected void onPause() {
         super.onPause();
         this.cameraCaptureTask.cancel(true);
-        mSensorManager.unregisterListener(this.steeringWheel);
+//        mSensorManager.unregisterListener(this.steeringWheel);
     }
 
     void setPanelBackground(Bitmap bitmap) {
