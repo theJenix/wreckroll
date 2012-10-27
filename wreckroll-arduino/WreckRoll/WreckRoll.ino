@@ -57,12 +57,12 @@ unsigned char security_passphrase_len;
 #define SUBSYS_STOWED 0
 #define SUBSYS_DEPLOYED 1
 
-#define CAR_MOTION_MS 200
-#define CAR_STOP_MS   1
-#define CAR_TURN_MS   200
-#define GUN_MOTION_STEPS 10
-#define SMOKE_MOTION_STEPS 10
-#define CANOPY_MOTION_STEPS 10
+#define CAR_MOTION_MS    200
+#define CAR_STOP_MS      200
+#define CAR_TURN_MS      200
+#define GUN_MOTION_MS    200
+#define SMOKE_MOTION_MS  200
+#define CANOPY_MOTION_MS 200
 
 //unsigned char mfg_id[4];
 
@@ -85,6 +85,7 @@ struct wreck_state {
   byte    canopy_motion_left;
   boolean canopy_state; 
   
+  boolean emergency_stop;
 };
 
 wreck_state ws = {0};
@@ -96,25 +97,13 @@ void debug(char *msg) {
 void setup()
 {
   initShield();
-//  registerThyself();
   set_command_handler(handle_command);
-//delay(2000);
-  
-//    Serial.println("Success!");
-//  } else {
-//    Serial.println("NO WAY!");
-//  }
-//  WiServer.enableVerboseMode(true);
 }
-
-//POSTrequest registerIp(registrar_ip, 8000, "192.168.1.134", "/ardi", NULL);
 
 int loop_cnt = 0;
 void loop()
 { 
 
-  //dflash.read_id(mfg_id);
-//  Serial.println("Sending IP to registrar");
   if (loop_cnt == 0) {
     register_me();
     loop_cnt = 1;
@@ -126,11 +115,13 @@ void loop()
   if (ws.last_time != 0) {
     ws.elapsed_time = this_time - ws.last_time;
   }
-  
 
   if (get_run_state() == STATE_RUNNING) {
     //advance any movement/actions that are held in the state.  this will be influenced
     // by commands received over the socket
+    if (ws.emergency_stop) {
+      all_stop();
+    }
     turn_wreck();
     move_wreck();
     toggle_gun();
@@ -223,7 +214,19 @@ void update_state(char command) {
         ws.canopy_motion_left = CANOPY_MOTION_STEPS;
       }
       break;
+    case 'X': //emergency stop
+      ws.emergency_stop = true;
+      break;
   }
+}
+
+void all_stop() {
+   if (ws.emergency_stop && ws.speedPM > 0) {
+     ws.speedPM  = 0;
+     ws.speedDir = ws.speedDir == LOW ? HIGH : LOW;
+     analogWrite(analOut1,  ws.speedPM);
+     digitalWrite(digiOut1, ws.speedDir);
+   } 
 }
 
 void turn_wreck() {
