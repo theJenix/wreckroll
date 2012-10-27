@@ -86,6 +86,7 @@ struct wreck_state {
   boolean canopy_state; 
   
   boolean emergency_stop;
+  
   int speedPM;
   int speedDir;
   
