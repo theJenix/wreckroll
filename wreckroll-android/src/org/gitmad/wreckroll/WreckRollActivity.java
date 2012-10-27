@@ -16,7 +16,7 @@ import org.gitmad.wreckroll.canvas.OnTouchPointListener;
 import org.gitmad.wreckroll.canvas.TouchPoint;
 import org.gitmad.wreckroll.canvas.TypewriterTextWriter;
 import org.gitmad.wreckroll.client.BufferedClient;
-import org.gitmad.wreckroll.client.DebugClient;
+import org.gitmad.wreckroll.client.DirectArduinoClient;
 import org.gitmad.wreckroll.client.WreckClient;
 import org.gitmad.wreckroll.util.CountdownTimer;
 import org.gitmad.wreckroll.video.CameraCaptureAsyncTask;
@@ -398,15 +398,16 @@ public class WreckRollActivity extends Activity {
     protected void onResume() {
         super.onResume();
         
-        String ipCamera = getCameraIP();
+//        String ipCamera = getCameraIP();
+        String ipCamera = "192.168.1.20";
 //        int color = 224, 170, 15 or 183, 135, 39
         this.cameraCaptureTask = new CameraCaptureAsyncTask(this, ipCamera, new SpyHardProcessor(MAX_DETECTED_FACES, Color.YELLOW, 50));
         this.cameraCaptureTask.execute();
         
         try {
-            this.client = new BufferedClient(new DebugClient()); // DirectArduinoClient();
+            this.client = new BufferedClient(new DirectArduinoClient());
             ///TODO: connect to registrar
-            String ipRelay   = getRelayIP();
+//            String ipRelay   = getRelayIP();
             short  relayPort = 6696;
 //            this.client = new BufferedClient(new RelayClient(ipRelay, relayPort));
         } catch (Exception e) {
