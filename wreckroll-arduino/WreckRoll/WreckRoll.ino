@@ -258,9 +258,9 @@ void move_wreck() {
       Serial.print("Moving the wreck ");
       Serial.println(ws.movement == 'F' ? "forward" : "backward");
       if (ws.movement == 'F')
-        ws.speedDir = 1;
+        ws.speedDir = HIGH;
       else 
-        ws.speedDir = 0;
+        ws.speedDir = LOW;
       increaseSpeedPM();
       int blinkSpeed = ws.movement == 'F' ? 1000 : 2000;
       doBlink(FLASH_SLAVE_SELECT, blinkSpeed);
@@ -283,7 +283,7 @@ void updateToPins(){
 }
 
 void increaseSpeedPM(){
-  ws.speedPM = ws.speedPM *2;
+  ws.speedPM = (ws.speedPM+1) *2;
   if (ws.speedPM > 255)
     ws.speedPM = 255;
 }
