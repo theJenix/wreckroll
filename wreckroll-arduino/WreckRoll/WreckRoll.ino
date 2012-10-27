@@ -90,6 +90,8 @@ struct wreck_state {
   int speedPM;
   int speedDir;
   
+  int turnPM;
+  int turnDir;
 };
 
 // Pins
