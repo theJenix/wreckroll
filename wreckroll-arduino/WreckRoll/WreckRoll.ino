@@ -95,14 +95,14 @@ struct wreck_state {
 };
 
 // Pins
-int speedDirPin = 12;
-int speedPMPin = 10;
+int speedDirPin = 7;
+int speedPMPin = 5;
 
-int turnDirPin = 9;
-int turnPMPin = 8;
+int turnDirPin = 8;
+int turnPMPin = 9;
 
-int rightSensorPin = 3;
-int leftSensorPin = 4;
+int rightSensorPin = 2;
+int leftSensorPin = 3;
 
 wreck_state ws = {0};
 
@@ -153,7 +153,7 @@ void loop()
     toggle_smoke();
     toggle_canopy();
   }
-  updateToPins();
+//  updateToPins();
 
   //use the time captured above..that means that an operation that takes 200ms will account for time performing the operation
   ws.last_time = this_time;
@@ -217,7 +217,7 @@ void update_state(char command) {
         //TODO: status message back to caller
         break;
       }
-      ws.movement = 'R';
+      ws.movement = 'V';
       ws.movement_left = CAR_MOTION_MS;
       break;
     case 'S': //stop
@@ -271,25 +271,27 @@ void turn_wreck() {
   if (ws.turn_left > 0) {
     Serial.print("Turning the wreck ");
     Serial.println(ws.turn == 'L' ? "left" : "right");
-    
-    if (ws.turn == 'L' && digitalRead(leftSensorPin) == LOW){
+    Serial.println(digitalRead(rightSensorPin)==LOW ? "LOW" : "HIGH");
+    Serial.println(digitalRead(leftSensorPin)==LOW ? "leftLOW" : "leftHIGH");
+    if (ws.turn == 'L' && digitalRead(rightSensorPin) == LOW){
+      Serial.println("Left");
       ws.turnPM = 255;
     } else if (ws.turn == 'L'){
+      Serial.println("NOT Left");
       ws.turnPM = 0;
-    } else if (ws.turn == 'R' && digitalRead(rightSensorPin) == LOW){
+    } else if (ws.turn == 'R' && digitalRead(leftSensorPin) == LOW){
+      Serial.println("Right");
       ws.turnPM = 255;
     } else {
+      Serial.println("NOT Right");
       ws.turnPM = 0;
     }
-
-    ws.turnDir = ws.turn =='L'? 'L' : 'R';
+    
+    ws.turnDir = ws.turn =='L'? LOW : HIGH;
 
     analogWrite(turnPMPin, ws.turnPM);
     digitalWrite(turnDirPin, ws.turnDir);
-
       
-    int blinkSpeed = ws.movement == 'L' ? 750 : 1500;
-    doBlink(FLASH_SLAVE_SELECT, blinkSpeed);
     ws.turn_left -= ws.elapsed_time;
   }
 }
